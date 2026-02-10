@@ -2,319 +2,231 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>PODIUM | Mission Control</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PODIUM | Radar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.umd.min.js"></script>
-
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@300;500;700&display=swap');
+
         :root {
-            --bg-midnight: #0A0A0A;
-            --grid-line: #2D2D2D;
-            --holographic: #F5F5F5;
-            --gold-glow: #FFD700;
-            --blue-glow: #007AFF;
-            --now-red: #FF3B30;
-            --hour-height: 100px;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --gold: #FFD700;
+            --blue: #00D1FF;
+            --white: #FFFFFF;
         }
 
         body {
-            background-color: var(--bg-midnight);
-            color: var(--holographic);
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
+            background-color: #050505;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent body scroll */
             height: 100vh;
-            width: 100vw;
         }
 
-        .glass-blur {
-            background: rgba(15, 15, 15, 0.7);
+        .font-podium { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Custom Scrollbar */
+        .radar-grid::-webkit-scrollbar { width: 4px; }
+        .radar-grid::-webkit-scrollbar-track { background: transparent; }
+        .radar-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .glass {
+            background: var(--glass);
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
-            border: 0.5px solid var(--grid-line);
+            border: 1px solid var(--glass-border);
         }
 
-        /* Time Grid Styling */
-        .time-grid {
-            height: calc(24 * var(--hour-height));
-            background-image: linear-gradient(var(--grid-line) 0.5px, transparent 0.5px);
-            background-size: 100% var(--hour-height);
-            position: relative;
-        }
-
-        .now-line {
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--now-red);
-            box-shadow: 0 0 10px var(--now-red);
-            z-index: 50;
-            pointer-events: none;
-            transition: top 60s linear;
-        }
-
-        .now-line::after {
-            content: 'NOW';
-            position: absolute;
-            right: 10px;
-            top: -10px;
-            font-size: 10px;
-            font-weight: bold;
-            color: var(--now-red);
-        }
-
-        /* Card Mechanics */
-        .event-card {
-            position: absolute;
-            left: 10%;
-            right: 5%;
-            border-radius: 8px;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
-            cursor: pointer;
-            overflow: hidden;
+        .hour-row {
+            height: 100px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
         }
 
         .orbit-ring {
-            width: 40px;
-            height: 40px;
-            transform: rotate(-90deg);
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            transition: stroke-dashoffset 1s linear;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--grid-line); border-radius: 10px; }
+        .category-glow-gold { box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); }
+        .category-glow-blue { box-shadow: 0 0 15px rgba(0, 209, 255, 0.2); border: 1px solid rgba(0, 209, 255, 0.4); }
+        .category-glow-white { box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); }
 
-        #particle-canvas {
+        #canvas-shatter {
             position: fixed;
-            top: 0;
-            left: 0;
-            pointer-events: none;
+            top: 0; left: 0; pointer-events: none;
             z-index: 100;
-        }
-
-        .shatter-target {
-            animation: shatter-sink 0.6s forwards ease-in;
-        }
-
-        @keyframes shatter-sink {
-            to { transform: translateY(100vh) scale(0); opacity: 0; }
         }
     </style>
 </head>
-<body class="safe-area-inset">
+<body>
 
-    <canvas id="particle-canvas"></canvas>
+    <canvas id="canvas-shatter"></canvas>
 
-    <div class="flex h-screen w-full overflow-hidden">
-        
-        <aside class="hidden lg:flex w-80 glass-blur flex-col p-6 border-r border-[#2D2D2D]">
-            <h1 class="text-2xl font-bold tracking-tighter mb-8 tracking-widest">PODIUM</h1>
-            <div id="mini-calendar" class="grid grid-cols-7 gap-2 text-center text-xs text-gray-500">
+    <header class="fixed top-0 w-full z-40 p-6 flex justify-between items-center bg-gradient-to-b from-[#050505] to-transparent">
+        <h1 class="font-podium text-2xl tracking-[0.2em] font-bold">PODIUM</h1>
+        <button onclick="openScheduler()" class="glass w-12 h-12 rounded-full flex items-center justify-center text-2xl hover:bg-white/10 transition-all active:scale-95">
+            +
+        </button>
+    </header>
+
+    <main class="pt-24 h-screen overflow-hidden flex flex-col">
+        <div class="radar-grid overflow-y-auto flex-1 relative px-4 pb-20">
+            <div id="grid-container" class="relative">
                 </div>
-        </aside>
+        </div>
+    </main>
 
-        <main class="flex-1 relative overflow-y-auto scroll-smooth" id="radar-container">
-            <div class="time-grid w-full" id="grid-mount">
-                <div id="now-line" class="now-line"></div>
-                <div id="hour-labels" class="absolute left-4 top-0 h-full pointer-events-none">
+    <div id="scheduler-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-xl" onclick="closeScheduler()"></div>
+        
+        <div id="phase-month" class="glass rounded-3xl p-8 w-full max-w-md relative animate-in fade-in zoom-in duration-300">
+            <h2 class="font-podium text-center mb-6 text-xl tracking-widest uppercase">Select Orbit Date</h2>
+            <div class="grid grid-cols-7 gap-2 text-center text-xs opacity-50 mb-2">
+                <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+            </div>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-2">
+                </div>
+        </div>
+
+        <div id="phase-precision" class="glass rounded-3xl p-8 w-full max-w-md relative hidden animate-in slide-in-from-bottom-8 duration-300">
+            <div class="flex flex-col gap-6">
+                <input type="text" id="task-title" placeholder="MISSION TITLE" class="bg-transparent border-b border-white/20 py-2 text-2xl font-podium focus:outline-none focus:border-white transition-all uppercase">
+                
+                <div>
+                    <label class="text-[10px] tracking-widest uppercase opacity-50 block mb-2">Time Alignment</label>
+                    <input type="time" id="task-time" class="bg-white/5 border border-white/10 p-3 rounded-xl w-full text-white">
+                </div>
+
+                <div>
+                    <label class="text-[10px] tracking-widest uppercase opacity-50 block mb-2">Satellite Category</label>
+                    <div class="grid grid-cols-2 gap-2" id="category-selector">
+                        <button onclick="selectCategory('Cohort', 'gold')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">COHORT</button>
+                        <button onclick="selectCategory('Practice', 'blue')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">PRACTICE</button>
+                        <button onclick="selectCategory('Family', 'white')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">FAMILY</button>
+                        <button onclick="selectCategory('Catalyst', 'gold')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">CATALYST</button>
                     </div>
-                <div id="event-mount"></div>
-            </div>
-        </main>
-    </div>
+                </div>
 
-    <button onclick="toggleConstructor()" class="fixed bottom-8 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full glass-blur flex items-center justify-center text-white border border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.2)] active:scale-95 transition-all z-[60]">
-        <i data-lucide="plus"></i>
-    </button>
-
-    <div id="constructor" class="fixed inset-0 z-[100] hidden items-center justify-center p-6 bg-black/60 backdrop-blur-md">
-        <div class="glass-blur w-full max-w-md rounded-2xl p-8 flex flex-col gap-6">
-            <h2 class="text-xl font-light">New Satellite Entry</h2>
-            <input id="entry-title" type="text" placeholder="Mission Name" class="bg-transparent border-b border-white/20 p-2 text-xl outline-none focus:border-blue-400 transition-colors">
-            
-            <div class="flex gap-4">
-                <select id="entry-category" class="bg-black/40 border border-white/10 rounded p-2 flex-1">
-                    <option value="COHORT">Cohort (Gold)</option>
-                    <option value="CATALYST">Catalyst (Blue)</option>
-                    <option value="COURSE">Course (White)</option>
-                </select>
-                <input id="entry-time" type="time" class="bg-black/40 border border-white/10 rounded p-2 text-white">
-            </div>
-
-            <div class="flex justify-between mt-4">
-                <button onclick="toggleConstructor()" class="text-gray-400">Abort</button>
-                <button onclick="createEvent()" class="px-6 py-2 bg-white text-black rounded-full font-bold">Confirm</button>
+                <button onclick="finalizeSatellite()" class="w-full bg-white text-black py-4 rounded-full font-bold tracking-widest uppercase text-sm hover:invert transition-all">
+                    Initialize Satellite
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- DATA STATE ---
-        let events = JSON.parse(localStorage.getItem('podium_events')) || [
-            { id: 1, title: 'Deep Work: Logic Gates', category: 'CATALYST', time: '14:00', duration: 90 },
-            { id: 2, title: 'Family Sync', category: 'COHORT', time: '18:30', duration: 60 }
-        ];
+        // State
+        let selectedDate = null;
+        let selectedCat = { name: 'Cohort', color: 'gold' };
+        const gridContainer = document.getElementById('grid-container');
 
-        // --- CORE ENGINE ---
-        function init() {
-            lucide.createIcons();
-            renderTimeLabels();
-            updateNowLine();
-            renderEvents();
-            setInterval(updateNowLine, 60000);
-            
-            // Initial scroll to current time
-            const now = new Date();
-            const scrollPos = (now.getHours() * 100) - 200;
-            document.getElementById('radar-container').scrollTop = scrollPos;
-        }
-
-        function renderTimeLabels() {
-            const container = document.getElementById('hour-labels');
-            for(let i=0; i<24; i++) {
-                const div = document.createElement('div');
-                div.style.height = '100px';
-                div.className = 'text-[10px] text-gray-600 font-mono flex items-start pt-1';
-                div.innerText = `${i.toString().padStart(2, '0')}:00`;
-                container.appendChild(div);
-            }
-        }
-
-        function updateNowLine() {
-            const now = new Date();
-            const minutes = (now.getHours() * 60) + now.getMinutes();
-            const top = (minutes / 60) * 100;
-            document.getElementById('now-line').style.top = `${top}px`;
-        }
-
-        function renderEvents() {
-            const mount = document.getElementById('event-mount');
-            mount.innerHTML = '';
-            
-            events.forEach(event => {
-                const [hrs, mins] = event.time.split(':').map(Number);
-                const top = ((hrs + (mins/60)) * 100);
-                const height = (event.duration / 60) * 100;
-
-                const color = event.category === 'COHORT' ? 'var(--gold-glow)' : 
-                              event.category === 'CATALYST' ? 'var(--blue-glow)' : '#FFF';
-
-                const card = document.createElement('div');
-                card.className = 'event-card glass-blur p-3 flex justify-between items-center group';
-                card.style.top = `${top}px`;
-                card.style.height = `${height}px`;
-                card.style.borderLeft = `4px solid ${color}`;
-                card.innerHTML = `
-                    <div>
-                        <div class="text-[10px] opacity-50 font-bold">${event.category}</div>
-                        <div class="text-sm font-medium">${event.title}</div>
-                    </div>
-                    <div class="orbit-ring-container relative">
-                        <svg class="orbit-ring">
-                            <circle cx="20" cy="20" r="16" fill="transparent" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
-                            <circle cx="20" cy="20" r="16" fill="transparent" stroke="${color}" stroke-width="2" 
-                                stroke-dasharray="100" stroke-dashoffset="30" stroke-linecap="round" />
-                        </svg>
-                    </div>
+        // 1. Build Grid
+        function initGrid() {
+            for (let i = 0; i < 24; i++) {
+                const hour = i.toString().padStart(2, '0') + ':00';
+                const row = document.createElement('div');
+                row.className = 'hour-row flex gap-4 items-start relative';
+                row.innerHTML = `
+                    <span class="text-[10px] opacity-30 font-mono w-8 sticky left-0">${hour}</span>
+                    <div class="flex-1 h-full relative border-l border-white/5"></div>
                 `;
-                
-                card.onclick = () => expandCard(event);
-                
-                // Swipe to Archive Logic
-                let startX = 0;
-                card.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-                card.addEventListener('touchend', e => {
-                    if (e.changedTouches[0].clientX - startX > 100) {
-                        shatterEvent(event.id, card);
-                    }
-                });
-
-                mount.appendChild(card);
-            });
-            localStorage.setItem('podium_events', JSON.stringify(events));
-        }
-
-        // --- ACTIONS ---
-        function toggleConstructor() {
-            const modal = document.getElementById('constructor');
-            modal.classList.toggle('hidden');
-            modal.classList.toggle('flex');
-        }
-
-        function createEvent() {
-            const title = document.getElementById('entry-title').value;
-            const category = document.getElementById('entry-category').value;
-            const time = document.getElementById('entry-time').value;
-
-            if(!title || !time) return alert("Mission details incomplete.");
-
-            events.push({
-                id: Date.now(),
-                title,
-                category,
-                time,
-                duration: 60
-            });
-
-            toggleConstructor();
-            renderEvents();
-            
-            // Handshake
-            window.parent.postMessage({ type: 'UPDATE_PROGRESS', appId: 'podium-03', value: 0.1 }, '*');
-        }
-
-        // --- THE SHATTER EFFECT ---
-        const canvas = document.getElementById('particle-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function shatterEvent(id, element) {
-            const rect = element.getBoundingClientRect();
-            createParticles(rect.left + rect.width/2, rect.top + rect.height/2);
-            
-            element.classList.add('shatter-target');
-            setTimeout(() => {
-                events = events.filter(e => e.id !== id);
-                renderEvents();
-            }, 600);
-        }
-
-        function createParticles(x, y) {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            for(let i=0; i<40; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    life: 1.0,
-                    color: '#FFD700'
-                });
+                gridContainer.appendChild(row);
             }
-            animateParticles();
         }
 
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, i) => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.2; // Gravity
-                p.life -= 0.02;
-                ctx.fillStyle = `rgba(255, 215, 0, ${p.life})`;
-                ctx.fillRect(p.x, p.y, 3, 3);
-                if(p.life <= 0) particles.splice(i, 1);
+        // 2. Scheduler Navigation
+        function openScheduler() {
+            document.getElementById('scheduler-overlay').classList.remove('hidden');
+            renderCalendar();
+        }
+
+        function closeScheduler() {
+            document.getElementById('scheduler-overlay').classList.add('hidden');
+            document.getElementById('phase-month').classList.remove('hidden');
+            document.getElementById('phase-precision').classList.add('hidden');
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 31; i++) {
+                const day = document.createElement('div');
+                day.className = 'aspect-square flex items-center justify-center text-sm rounded-full hover:bg-white/20 cursor-pointer transition-all';
+                day.innerText = i;
+                day.onclick = () => {
+                    selectedDate = i;
+                    document.getElementById('phase-month').classList.add('hidden');
+                    document.getElementById('phase-precision').classList.remove('hidden');
+                };
+                grid.appendChild(day);
+            }
+        }
+
+        function selectCategory(name, color) {
+            selectedCat = { name, color };
+            // Simple visual feedback
+            const buttons = document.querySelectorAll('#category-selector button');
+            buttons.forEach(b => b.classList.remove('bg-white/20'));
+            event.target.classList.add('bg-white/20');
+        }
+
+        // 3. Create Satellite Card
+        function finalizeSatellite() {
+            const title = document.getElementById('task-title').value || "Unnamed Satellite";
+            const time = document.getElementById('task-time').value || "12:00";
+            const hour = parseInt(time.split(':')[0]);
+            const minutes = parseInt(time.split(':')[1]);
+            
+            const topOffset = (hour * 100) + (minutes * (100/60));
+
+            const card = document.createElement('div');
+            card.className = `absolute left-12 right-0 mx-4 glass p-4 rounded-2xl flex justify-between items-center category-glow-${selectedCat.color} cursor-pointer group animate-in slide-in-from-right-4 duration-500`;
+            card.style.top = `${topOffset}px`;
+            card.style.height = "80px";
+
+            card.innerHTML = `
+                <div>
+                    <h4 class="text-xs opacity-50 font-podium uppercase tracking-widest">${selectedCat.name}</h4>
+                    <h3 class="font-bold text-sm tracking-tight">${title}</h3>
+                </div>
+                <div class="relative w-10 h-10 flex items-center justify-center">
+                    <svg class="absolute inset-0 w-full h-full -rotate-90">
+                        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2" class="opacity-10" />
+                        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2" class="orbit-ring text-white" style="stroke-dashoffset: 30" />
+                    </svg>
+                    <span class="text-[8px]">ACTIVE</span>
+                </div>
+            `;
+
+            card.onclick = () => shatterEffect(card);
+
+            gridContainer.appendChild(card);
+            closeScheduler();
+        }
+
+        // 4. The Shatter Effect
+        function shatterEffect(element) {
+            const rect = element.getBoundingClientRect();
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { 
+                    x: (rect.left + rect.width / 2) / window.innerWidth,
+                    y: (rect.top + rect.height / 2) / window.innerHeight 
+                },
+                colors: [selectedCat.color === 'gold' ? '#FFD700' : '#00D1FF', '#ffffff']
             });
-            if(particles.length > 0) requestAnimationFrame(animateParticles);
+            
+            element.classList.add('scale-110', 'opacity-0', 'transition-all', 'duration-300');
+            setTimeout(() => element.remove(), 300);
         }
 
-        window.onload = init;
+        // Initialize
+        initGrid();
     </script>
 </body>
 </html>
