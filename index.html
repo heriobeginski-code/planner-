@@ -3,376 +3,316 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>THE PODIUM | Mission Control</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>PODIUM | Mission Control</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.umd.min.js"></script>
+
     <style>
         :root {
-            --gold: #FFD700;
-            --teal: #2DD4BF;
-            --blue: #3B82F6;
-            --red: #EF4444;
-            --glass: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.15);
+            --bg-midnight: #0A0A0A;
+            --grid-line: #2D2D2D;
+            --holographic: #F5F5F5;
+            --gold-glow: #FFD700;
+            --blue-glow: #007AFF;
+            --now-red: #FF3B30;
+            --hour-height: 100px;
         }
 
         body {
-            background: #050505;
-            color: white;
-            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-midnight);
+            color: var(--holographic);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             overflow: hidden;
             height: 100vh;
-            -webkit-tap-highlight-color: transparent;
+            width: 100vw;
         }
 
-        .glass-slab {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        .glass-blur {
+            background: rgba(15, 15, 15, 0.7);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 0.5px solid var(--grid-line);
+        }
+
+        /* Time Grid Styling */
+        .time-grid {
+            height: calc(24 * var(--hour-height));
+            background-image: linear-gradient(var(--grid-line) 0.5px, transparent 0.5px);
+            background-size: 100% var(--hour-height);
+            position: relative;
+        }
+
+        .now-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--now-red);
+            box-shadow: 0 0 10px var(--now-red);
+            z-index: 50;
+            pointer-events: none;
+            transition: top 60s linear;
+        }
+
+        .now-line::after {
+            content: 'NOW';
+            position: absolute;
+            right: 10px;
+            top: -10px;
+            font-size: 10px;
+            font-weight: bold;
+            color: var(--now-red);
+        }
+
+        /* Card Mechanics */
+        .event-card {
+            position: absolute;
+            left: 10%;
+            right: 5%;
+            border-radius: 8px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            cursor: pointer;
+            overflow: hidden;
         }
 
         .orbit-ring {
+            width: 40px;
+            height: 40px;
             transform: rotate(-90deg);
-            transition: stroke-dashoffset 0.5s ease;
         }
 
-        .breathing {
-            animation: breathe 2s infinite ease-in-out;
-        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--grid-line); border-radius: 10px; }
 
-        @keyframes breathe {
-            0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--gold)); }
-            50% { opacity: 0.5; filter: drop-shadow(0 0 10px var(--gold)); }
-        }
-
-        .glitch {
-            animation: glitch-text 1s infinite linear alternate-reverse;
-            color: #ff4d4d;
-        }
-
-        @keyframes glitch-text {
-            0% { transform: translate(0); text-shadow: -1px 0 #fff; }
-            20% { transform: translate(-1px, 1px); }
-            40% { transform: translate(-1px, -1px); text-shadow: 1px 0 var(--red); }
-            100% { transform: translate(0); }
-        }
-
-        .expanded-card {
+        #particle-canvas {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(1);
-            width: 90vw;
-            height: 80vh;
-            z-index: 50;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 100;
         }
 
-        #dashboard-blur {
-            transition: filter 0.5s ease;
+        .shatter-target {
+            animation: shatter-sink 0.6s forwards ease-in;
         }
 
-        .chronos-wheel {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            border: 2px dashed var(--glass-border);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        @keyframes shatter-sink {
+            to { transform: translateY(100vh) scale(0); opacity: 0; }
         }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="p-6">
+<body class="safe-area-inset">
 
-    <div id="dashboard-blur" class="h-full flex flex-col">
-        <header class="flex justify-between items-center mb-8">
-            <div>
-                <h1 class="text-xs uppercase tracking-[0.3em] opacity-50 font-mono">Mission Control / Pod-03</h1>
-                <h2 class="text-2xl font-light">The Podium</h2>
+    <canvas id="particle-canvas"></canvas>
+
+    <div class="flex h-screen w-full overflow-hidden">
+        
+        <aside class="hidden lg:flex w-80 glass-blur flex-col p-6 border-r border-[#2D2D2D]">
+            <h1 class="text-2xl font-bold tracking-tighter mb-8 tracking-widest">PODIUM</h1>
+            <div id="mini-calendar" class="grid grid-cols-7 gap-2 text-center text-xs text-gray-500">
+                </div>
+        </aside>
+
+        <main class="flex-1 relative overflow-y-auto scroll-smooth" id="radar-container">
+            <div class="time-grid w-full" id="grid-mount">
+                <div id="now-line" class="now-line"></div>
+                <div id="hour-labels" class="absolute left-4 top-0 h-full pointer-events-none">
+                    </div>
+                <div id="event-mount"></div>
             </div>
-            <div id="global-progress" class="text-teal-400 font-mono text-sm">0%</div>
-        </header>
-
-        <main id="card-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto no-scrollbar pb-32">
-            </main>
-
-        <div id="archive-dock" class="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-2 h-1 overflow-hidden">
-            </div>
-
-        <button onclick="openChronos()" class="fixed bottom-10 left-1/2 -translate-x-1/2 w-16 h-16 glass-slab flex items-center justify-center border-teal-500/50 hover:scale-110 transition-transform">
-            <i data-lucide="plus" class="text-teal-400"></i>
-        </button>
+        </main>
     </div>
 
-    <div id="overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-40 opacity-0 transition-opacity duration-500" onclick="closeExpanded()"></div>
-    
-    <div id="detail-view" class="hidden glass-slab z-50 p-8 flex flex-col pointer-events-none opacity-0 transition-all duration-500 overflow-y-auto no-scrollbar">
-        <div class="flex justify-between items-start mb-8">
-            <input id="edit-title" class="bg-transparent text-3xl font-light outline-none border-b border-white/10 pb-2 w-full" placeholder="Task Title">
-            <button onclick="closeExpanded()" class="ml-4 opacity-50 hover:opacity-100"><i data-lucide="x"></i></button>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
-            <div class="space-y-6">
-                <label class="block text-[10px] uppercase tracking-widest opacity-40">Notes & Protocol</label>
-                <textarea id="edit-notes" class="bg-transparent w-full h-64 resize-none outline-none font-light leading-relaxed border-l border-white/10 pl-4" placeholder="Enter session notes..."></textarea>
-            </div>
+    <button onclick="toggleConstructor()" class="fixed bottom-8 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full glass-blur flex items-center justify-center text-white border border-[#FFD700]/30 shadow-[0_0_20px_rgba(255,215,0,0.2)] active:scale-95 transition-all z-[60]">
+        <i data-lucide="plus"></i>
+    </button>
+
+    <div id="constructor" class="fixed inset-0 z-[100] hidden items-center justify-center p-6 bg-black/60 backdrop-blur-md">
+        <div class="glass-blur w-full max-w-md rounded-2xl p-8 flex flex-col gap-6">
+            <h2 class="text-xl font-light">New Satellite Entry</h2>
+            <input id="entry-title" type="text" placeholder="Mission Name" class="bg-transparent border-b border-white/20 p-2 text-xl outline-none focus:border-blue-400 transition-colors">
             
-            <div class="flex flex-col items-center justify-center space-y-4">
-                <label class="text-[10px] uppercase tracking-widest opacity-40">Chronos Module</label>
-                <div class="chronos-wheel" id="chronos-touch">
-                    <span id="display-time" class="text-2xl font-mono">12:00</span>
-                    <div id="wheel-hand" class="absolute w-1 h-24 bg-teal-500 origin-bottom bottom-1/2 transition-transform"></div>
-                </div>
-                <div class="flex gap-4 mt-4">
-                    <button onclick="saveCard()" class="px-8 py-3 bg-white text-black rounded-full text-xs font-bold uppercase tracking-widest">Execute</button>
-                </div>
+            <div class="flex gap-4">
+                <select id="entry-category" class="bg-black/40 border border-white/10 rounded p-2 flex-1">
+                    <option value="COHORT">Cohort (Gold)</option>
+                    <option value="CATALYST">Catalyst (Blue)</option>
+                    <option value="COURSE">Course (White)</option>
+                </select>
+                <input id="entry-time" type="time" class="bg-black/40 border border-white/10 rounded p-2 text-white">
+            </div>
+
+            <div class="flex justify-between mt-4">
+                <button onclick="toggleConstructor()" class="text-gray-400">Abort</button>
+                <button onclick="createEvent()" class="px-6 py-2 bg-white text-black rounded-full font-bold">Confirm</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Initial Data
-        let cards = JSON.parse(localStorage.getItem('podium_cards')) || [
-            { id: '1', title: 'Strategy Sync', category: 'Meeting', startTime: Date.now() + 3600000, notes: '', status: 'active', created: Date.now() },
-            { id: '2', title: 'Outreach Protocol', category: 'Call', startTime: Date.now() + 7200000, notes: '', status: 'active', created: Date.now() },
-            { id: '3', title: 'Deep Work: AI', category: 'Study', startTime: Date.now() + 10800000, notes: '', status: 'active', created: Date.now() },
-            { id: '4', title: 'Review: Financials', category: 'Study', startTime: Date.now() + 14400000, notes: '', status: 'active', created: Date.now() },
-            { id: '5', title: 'Client Briefing', category: 'Meeting', startTime: Date.now() + 18000000, notes: '', status: 'active', created: Date.now() },
-            { id: '6', title: 'Weekly Wrap-Up', category: 'Call', startTime: Date.now() + 21600000, notes: '', status: 'active', created: Date.now() }
+        // --- DATA STATE ---
+        let events = JSON.parse(localStorage.getItem('podium_events')) || [
+            { id: 1, title: 'Deep Work: Logic Gates', category: 'CATALYST', time: '14:00', duration: 90 },
+            { id: 2, title: 'Family Sync', category: 'COHORT', time: '18:30', duration: 60 }
         ];
 
-        let activeEditingId = null;
-        let selectedHour = 12;
-
+        // --- CORE ENGINE ---
         function init() {
-            renderCards();
             lucide.createIcons();
-            startOrbitClock();
-            updateMotherApp();
+            renderTimeLabels();
+            updateNowLine();
+            renderEvents();
+            setInterval(updateNowLine, 60000);
+            
+            // Initial scroll to current time
+            const now = new Date();
+            const scrollPos = (now.getHours() * 100) - 200;
+            document.getElementById('radar-container').scrollTop = scrollPos;
         }
 
-        function renderCards() {
-            const grid = document.getElementById('card-grid');
-            const dock = document.getElementById('archive-dock');
-            grid.innerHTML = '';
-            dock.innerHTML = '';
-
-            cards.forEach(card => {
-                if(card.status === 'active') {
-                    const el = createCardEl(card);
-                    grid.appendChild(el);
-                } else {
-                    const sliver = document.createElement('div');
-                    sliver.className = 'w-4 h-full bg-teal-500/30 rounded-full';
-                    dock.appendChild(sliver);
-                }
-            });
-            lucide.createIcons();
-        }
-
-        function createCardEl(card) {
-            const div = document.createElement('div');
-            div.className = 'glass-slab p-6 relative cursor-pointer group hover:border-white/30 transition-all';
-            div.onclick = () => expandCard(card.id);
-            
-            // Swipe Gestures
-            let startX = 0;
-            div.ontouchstart = e => startX = e.touches[0].clientX;
-            div.ontouchend = e => {
-                let diff = e.changedTouches[0].clientX - startX;
-                if(diff > 150) completeCard(card.id); // Swipe Right
-                if(diff < -150) snoozeCard(card.id);  // Swipe Left
-            };
-
-            const now = Date.now();
-            const total = card.startTime - card.created;
-            const elapsed = now - card.created;
-            const progress = Math.min(Math.max(elapsed / total, 0), 1);
-            const remainingMins = Math.round((card.startTime - now) / 60000);
-            
-            let ringColor = 'var(--teal)';
-            let stateClass = '';
-            if (remainingMins < 0) {
-                ringColor = 'var(--red)';
-                stateClass = 'glitch';
-            } else if (remainingMins < 60) {
-                ringColor = 'var(--gold)';
-                stateClass = 'breathing';
+        function renderTimeLabels() {
+            const container = document.getElementById('hour-labels');
+            for(let i=0; i<24; i++) {
+                const div = document.createElement('div');
+                div.style.height = '100px';
+                div.className = 'text-[10px] text-gray-600 font-mono flex items-start pt-1';
+                div.innerText = `${i.toString().padStart(2, '0')}:00`;
+                container.appendChild(div);
             }
+        }
 
-            div.innerHTML = `
-                <div class="flex justify-between items-start mb-12">
-                    <div class="relative w-16 h-16">
-                        <svg class="w-16 h-16 orbit-ring">
-                            <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.05)" stroke-width="2" fill="none"/>
-                            <circle cx="32" cy="32" r="28" stroke="${ringColor}" stroke-width="2" fill="none" 
-                                stroke-dasharray="175.9" stroke-dashoffset="${175.9 * (1 - progress)}"/>
-                        </svg>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <i data-lucide="${getIcon(card.category)}" class="w-5 h-5 opacity-50"></i>
-                        </div>
+        function updateNowLine() {
+            const now = new Date();
+            const minutes = (now.getHours() * 60) + now.getMinutes();
+            const top = (minutes / 60) * 100;
+            document.getElementById('now-line').style.top = `${top}px`;
+        }
+
+        function renderEvents() {
+            const mount = document.getElementById('event-mount');
+            mount.innerHTML = '';
+            
+            events.forEach(event => {
+                const [hrs, mins] = event.time.split(':').map(Number);
+                const top = ((hrs + (mins/60)) * 100);
+                const height = (event.duration / 60) * 100;
+
+                const color = event.category === 'COHORT' ? 'var(--gold-glow)' : 
+                              event.category === 'CATALYST' ? 'var(--blue-glow)' : '#FFF';
+
+                const card = document.createElement('div');
+                card.className = 'event-card glass-blur p-3 flex justify-between items-center group';
+                card.style.top = `${top}px`;
+                card.style.height = `${height}px`;
+                card.style.borderLeft = `4px solid ${color}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="text-[10px] opacity-50 font-bold">${event.category}</div>
+                        <div class="text-sm font-medium">${event.title}</div>
                     </div>
-                    <span class="text-[10px] uppercase tracking-widest opacity-40 font-mono">${card.category}</span>
-                </div>
-                <h3 class="text-xl font-light mb-2 ${stateClass}">${card.title}</h3>
-                <p class="text-[10px] font-mono opacity-30">${new Date(card.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-            `;
-            return div;
-        }
-
-        function getIcon(cat) {
-            if(cat === 'Meeting') return 'users';
-            if(cat === 'Call') return 'phone';
-            return 'book-open';
-        }
-
-        function expandCard(id) {
-            const card = cards.find(c => c.id === id);
-            activeEditingId = id;
-            
-            document.getElementById('edit-title').value = card.title;
-            document.getElementById('edit-notes').value = card.notes || '';
-            
-            const detail = document.getElementById('detail-view');
-            const overlay = document.getElementById('overlay');
-            const dash = document.getElementById('dashboard-blur');
-
-            detail.classList.remove('hidden');
-            overlay.classList.remove('hidden');
-            dash.style.filter = 'blur(40px)';
-            
-            setTimeout(() => {
-                detail.style.opacity = '1';
-                detail.style.pointerEvents = 'auto';
-                detail.classList.add('expanded-card');
-                overlay.style.opacity = '1';
-            }, 10);
-        }
-
-        function closeExpanded() {
-            const detail = document.getElementById('detail-view');
-            const overlay = document.getElementById('overlay');
-            const dash = document.getElementById('dashboard-blur');
-
-            detail.style.opacity = '0';
-            detail.style.pointerEvents = 'none';
-            detail.classList.remove('expanded-card');
-            overlay.style.opacity = '0';
-            dash.style.filter = 'blur(0px)';
-
-            setTimeout(() => {
-                detail.classList.add('hidden');
-                overlay.classList.add('hidden');
-                activeEditingId = null;
-            }, 500);
-        }
-
-        function openChronos() {
-            activeEditingId = 'new-' + Date.now();
-            document.getElementById('edit-title').value = '';
-            document.getElementById('edit-notes').value = '';
-            expandCard(activeEditingId);
-        }
-
-        function saveCard() {
-            const title = document.getElementById('edit-title').value;
-            const notes = document.getElementById('edit-notes').value;
-            const time = new Date();
-            time.setHours(selectedHour, 0, 0, 0);
-
-            if(activeEditingId.startsWith('new-')) {
-                cards.push({
-                    id: activeEditingId,
-                    title: title || 'Untitled Session',
-                    category: 'Study',
-                    startTime: time.getTime(),
-                    notes: notes,
-                    status: 'active',
-                    created: Date.now()
+                    <div class="orbit-ring-container relative">
+                        <svg class="orbit-ring">
+                            <circle cx="20" cy="20" r="16" fill="transparent" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+                            <circle cx="20" cy="20" r="16" fill="transparent" stroke="${color}" stroke-width="2" 
+                                stroke-dasharray="100" stroke-dashoffset="30" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                `;
+                
+                card.onclick = () => expandCard(event);
+                
+                // Swipe to Archive Logic
+                let startX = 0;
+                card.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+                card.addEventListener('touchend', e => {
+                    if (e.changedTouches[0].clientX - startX > 100) {
+                        shatterEvent(event.id, card);
+                    }
                 });
-            } else {
-                const card = cards.find(c => c.id === activeEditingId);
-                card.title = title;
-                card.notes = notes;
-                card.startTime = time.getTime();
-            }
 
-            localStorage.setItem('podium_cards', JSON.stringify(cards));
-            renderCards();
-            closeExpanded();
-            updateMotherApp();
+                mount.appendChild(card);
+            });
+            localStorage.setItem('podium_events', JSON.stringify(events));
         }
 
-        function completeCard(id) {
-            const card = cards.find(c => c.id === id);
-            card.status = 'completed';
-            localStorage.setItem('podium_cards', JSON.stringify(cards));
-            renderCards();
-            updateMotherApp();
+        // --- ACTIONS ---
+        function toggleConstructor() {
+            const modal = document.getElementById('constructor');
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
         }
 
-        function snoozeCard(id) {
-            const card = cards.find(c => c.id === id);
-            card.startTime += 86400000;
-            localStorage.setItem('podium_cards', JSON.stringify(cards));
-            renderCards();
-        }
+        function createEvent() {
+            const title = document.getElementById('entry-title').value;
+            const category = document.getElementById('entry-category').value;
+            const time = document.getElementById('entry-time').value;
 
-        // Chronos Logic (Circular Touch)
-        const wheel = document.getElementById('chronos-touch');
-        wheel.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const rect = wheel.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            const angle = Math.atan2(e.touches[0].clientY - centerY, e.touches[0].clientX - centerX);
-            let deg = angle * (180 / Math.PI) + 90;
-            if (deg < 0) deg += 360;
+            if(!title || !time) return alert("Mission details incomplete.");
+
+            events.push({
+                id: Date.now(),
+                title,
+                category,
+                time,
+                duration: 60
+            });
+
+            toggleConstructor();
+            renderEvents();
             
-            selectedHour = Math.round(deg / 15) % 24;
-            document.getElementById('wheel-hand').style.transform = `rotate(${deg}deg)`;
-            document.getElementById('display-time').innerText = `${selectedHour.toString().padStart(2, '0')}:00`;
-        });
+            // Handshake
+            window.parent.postMessage({ type: 'UPDATE_PROGRESS', appId: 'podium-03', value: 0.1 }, '*');
+        }
 
-        // The Handshake
-        function updateMotherApp() {
-            const total = cards.length;
-            const completed = cards.filter(c => c.status === 'completed').length;
-            const progress = total > 0 ? completed / total : 0;
+        // --- THE SHATTER EFFECT ---
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function shatterEvent(id, element) {
+            const rect = element.getBoundingClientRect();
+            createParticles(rect.left + rect.width/2, rect.top + rect.height/2);
             
-            document.getElementById('global-progress').innerText = `${Math.round(progress * 100)}%`;
-
-            window.parent.postMessage({ 
-                type: 'UPDATE_PROGRESS', 
-                appId: 'podium-03', 
-                value: progress 
-            }, '*');
+            element.classList.add('shatter-target');
+            setTimeout(() => {
+                events = events.filter(e => e.id !== id);
+                renderEvents();
+            }, 600);
         }
 
-        function startOrbitClock() {
-            setInterval(() => {
-                if(!activeEditingId) renderCards();
-            }, 60000);
-        }
-
-        // Auto-save notes
-        document.getElementById('edit-notes').onkeyup = () => {
-            if(activeEditingId && !activeEditingId.startsWith('new-')) {
-                const card = cards.find(c => c.id === activeEditingId);
-                card.notes = document.getElementById('edit-notes').value;
-                localStorage.setItem('podium_cards', JSON.stringify(cards));
+        function createParticles(x, y) {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            for(let i=0; i<40; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1.0,
+                    color: '#FFD700'
+                });
             }
-        };
+            animateParticles();
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // Gravity
+                p.life -= 0.02;
+                ctx.fillStyle = `rgba(255, 215, 0, ${p.life})`;
+                ctx.fillRect(p.x, p.y, 3, 3);
+                if(p.life <= 0) particles.splice(i, 1);
+            });
+            if(particles.length > 0) requestAnimationFrame(animateParticles);
+        }
 
         window.onload = init;
     </script>
