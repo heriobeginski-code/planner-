@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>THE PODIUM | Mission Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gold: #FFD700;
+            --teal: #2DD4BF;
+            --blue: #3B82F6;
+            --red: #EF4444;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            background: #050505;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-slab {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .orbit-ring {
+            transform: rotate(-90deg);
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .breathing {
+            animation: breathe 2s infinite ease-in-out;
+        }
+
+        @keyframes breathe {
+            0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--gold)); }
+            50% { opacity: 0.5; filter: drop-shadow(0 0 10px var(--gold)); }
+        }
+
+        .glitch {
+            animation: glitch-text 1s infinite linear alternate-reverse;
+            color: #ff4d4d;
+        }
+
+        @keyframes glitch-text {
+            0% { transform: translate(0); text-shadow: -1px 0 #fff; }
+            20% { transform: translate(-1px, 1px); }
+            40% { transform: translate(-1px, -1px); text-shadow: 1px 0 var(--red); }
+            100% { transform: translate(0); }
+        }
+
+        .expanded-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: 90vw;
+            height: 80vh;
+            z-index: 50;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #dashboard-blur {
+            transition: filter 0.5s ease;
+        }
+
+        .chronos-wheel {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: 2px dashed var(--glass-border);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="p-6">
+
+    <div id="dashboard-blur" class="h-full flex flex-col">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-xs uppercase tracking-[0.3em] opacity-50 font-mono">Mission Control / Pod-03</h1>
+                <h2 class="text-2xl font-light">The Podium</h2>
+            </div>
+            <div id="global-progress" class="text-teal-400 font-mono text-sm">0%</div>
+        </header>
+
+        <main id="card-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-y-auto no-scrollbar pb-32">
+            </main>
+
+        <div id="archive-dock" class="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-2 h-1 overflow-hidden">
+            </div>
+
+        <button onclick="openChronos()" class="fixed bottom-10 left-1/2 -translate-x-1/2 w-16 h-16 glass-slab flex items-center justify-center border-teal-500/50 hover:scale-110 transition-transform">
+            <i data-lucide="plus" class="text-teal-400"></i>
+        </button>
+    </div>
+
+    <div id="overlay" class="hidden fixed inset-0 bg-black/60 backdrop-blur-md z-40 opacity-0 transition-opacity duration-500" onclick="closeExpanded()"></div>
+    
+    <div id="detail-view" class="hidden glass-slab z-50 p-8 flex flex-col pointer-events-none opacity-0 transition-all duration-500 overflow-y-auto no-scrollbar">
+        <div class="flex justify-between items-start mb-8">
+            <input id="edit-title" class="bg-transparent text-3xl font-light outline-none border-b border-white/10 pb-2 w-full" placeholder="Task Title">
+            <button onclick="closeExpanded()" class="ml-4 opacity-50 hover:opacity-100"><i data-lucide="x"></i></button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 flex-1">
+            <div class="space-y-6">
+                <label class="block text-[10px] uppercase tracking-widest opacity-40">Notes & Protocol</label>
+                <textarea id="edit-notes" class="bg-transparent w-full h-64 resize-none outline-none font-light leading-relaxed border-l border-white/10 pl-4" placeholder="Enter session notes..."></textarea>
+            </div>
+            
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <label class="text-[10px] uppercase tracking-widest opacity-40">Chronos Module</label>
+                <div class="chronos-wheel" id="chronos-touch">
+                    <span id="display-time" class="text-2xl font-mono">12:00</span>
+                    <div id="wheel-hand" class="absolute w-1 h-24 bg-teal-500 origin-bottom bottom-1/2 transition-transform"></div>
+                </div>
+                <div class="flex gap-4 mt-4">
+                    <button onclick="saveCard()" class="px-8 py-3 bg-white text-black rounded-full text-xs font-bold uppercase tracking-widest">Execute</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initial Data
+        let cards = JSON.parse(localStorage.getItem('podium_cards')) || [
+            { id: '1', title: 'Strategy Sync', category: 'Meeting', startTime: Date.now() + 3600000, notes: '', status: 'active', created: Date.now() },
+            { id: '2', title: 'Outreach Protocol', category: 'Call', startTime: Date.now() + 7200000, notes: '', status: 'active', created: Date.now() },
+            { id: '3', title: 'Deep Work: AI', category: 'Study', startTime: Date.now() + 10800000, notes: '', status: 'active', created: Date.now() },
+            { id: '4', title: 'Review: Financials', category: 'Study', startTime: Date.now() + 14400000, notes: '', status: 'active', created: Date.now() },
+            { id: '5', title: 'Client Briefing', category: 'Meeting', startTime: Date.now() + 18000000, notes: '', status: 'active', created: Date.now() },
+            { id: '6', title: 'Weekly Wrap-Up', category: 'Call', startTime: Date.now() + 21600000, notes: '', status: 'active', created: Date.now() }
+        ];
+
+        let activeEditingId = null;
+        let selectedHour = 12;
+
+        function init() {
+            renderCards();
+            lucide.createIcons();
+            startOrbitClock();
+            updateMotherApp();
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('card-grid');
+            const dock = document.getElementById('archive-dock');
+            grid.innerHTML = '';
+            dock.innerHTML = '';
+
+            cards.forEach(card => {
+                if(card.status === 'active') {
+                    const el = createCardEl(card);
+                    grid.appendChild(el);
+                } else {
+                    const sliver = document.createElement('div');
+                    sliver.className = 'w-4 h-full bg-teal-500/30 rounded-full';
+                    dock.appendChild(sliver);
+                }
+            });
+            lucide.createIcons();
+        }
+
+        function createCardEl(card) {
+            const div = document.createElement('div');
+            div.className = 'glass-slab p-6 relative cursor-pointer group hover:border-white/30 transition-all';
+            div.onclick = () => expandCard(card.id);
+            
+            // Swipe Gestures
+            let startX = 0;
+            div.ontouchstart = e => startX = e.touches[0].clientX;
+            div.ontouchend = e => {
+                let diff = e.changedTouches[0].clientX - startX;
+                if(diff > 150) completeCard(card.id); // Swipe Right
+                if(diff < -150) snoozeCard(card.id);  // Swipe Left
+            };
+
+            const now = Date.now();
+            const total = card.startTime - card.created;
+            const elapsed = now - card.created;
+            const progress = Math.min(Math.max(elapsed / total, 0), 1);
+            const remainingMins = Math.round((card.startTime - now) / 60000);
+            
+            let ringColor = 'var(--teal)';
+            let stateClass = '';
+            if (remainingMins < 0) {
+                ringColor = 'var(--red)';
+                stateClass = 'glitch';
+            } else if (remainingMins < 60) {
+                ringColor = 'var(--gold)';
+                stateClass = 'breathing';
+            }
+
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-12">
+                    <div class="relative w-16 h-16">
+                        <svg class="w-16 h-16 orbit-ring">
+                            <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.05)" stroke-width="2" fill="none"/>
+                            <circle cx="32" cy="32" r="28" stroke="${ringColor}" stroke-width="2" fill="none" 
+                                stroke-dasharray="175.9" stroke-dashoffset="${175.9 * (1 - progress)}"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i data-lucide="${getIcon(card.category)}" class="w-5 h-5 opacity-50"></i>
+                        </div>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest opacity-40 font-mono">${card.category}</span>
+                </div>
+                <h3 class="text-xl font-light mb-2 ${stateClass}">${card.title}</h3>
+                <p class="text-[10px] font-mono opacity-30">${new Date(card.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+            `;
+            return div;
+        }
+
+        function getIcon(cat) {
+            if(cat === 'Meeting') return 'users';
+            if(cat === 'Call') return 'phone';
+            return 'book-open';
+        }
+
+        function expandCard(id) {
+            const card = cards.find(c => c.id === id);
+            activeEditingId = id;
+            
+            document.getElementById('edit-title').value = card.title;
+            document.getElementById('edit-notes').value = card.notes || '';
+            
+            const detail = document.getElementById('detail-view');
+            const overlay = document.getElementById('overlay');
+            const dash = document.getElementById('dashboard-blur');
+
+            detail.classList.remove('hidden');
+            overlay.classList.remove('hidden');
+            dash.style.filter = 'blur(40px)';
+            
+            setTimeout(() => {
+                detail.style.opacity = '1';
+                detail.style.pointerEvents = 'auto';
+                detail.classList.add('expanded-card');
+                overlay.style.opacity = '1';
+            }, 10);
+        }
+
+        function closeExpanded() {
+            const detail = document.getElementById('detail-view');
+            const overlay = document.getElementById('overlay');
+            const dash = document.getElementById('dashboard-blur');
+
+            detail.style.opacity = '0';
+            detail.style.pointerEvents = 'none';
+            detail.classList.remove('expanded-card');
+            overlay.style.opacity = '0';
+            dash.style.filter = 'blur(0px)';
+
+            setTimeout(() => {
+                detail.classList.add('hidden');
+                overlay.classList.add('hidden');
+                activeEditingId = null;
+            }, 500);
+        }
+
+        function openChronos() {
+            activeEditingId = 'new-' + Date.now();
+            document.getElementById('edit-title').value = '';
+            document.getElementById('edit-notes').value = '';
+            expandCard(activeEditingId);
+        }
+
+        function saveCard() {
+            const title = document.getElementById('edit-title').value;
+            const notes = document.getElementById('edit-notes').value;
+            const time = new Date();
+            time.setHours(selectedHour, 0, 0, 0);
+
+            if(activeEditingId.startsWith('new-')) {
+                cards.push({
+                    id: activeEditingId,
+                    title: title || 'Untitled Session',
+                    category: 'Study',
+                    startTime: time.getTime(),
+                    notes: notes,
+                    status: 'active',
+                    created: Date.now()
+                });
+            } else {
+                const card = cards.find(c => c.id === activeEditingId);
+                card.title = title;
+                card.notes = notes;
+                card.startTime = time.getTime();
+            }
+
+            localStorage.setItem('podium_cards', JSON.stringify(cards));
+            renderCards();
+            closeExpanded();
+            updateMotherApp();
+        }
+
+        function completeCard(id) {
+            const card = cards.find(c => c.id === id);
+            card.status = 'completed';
+            localStorage.setItem('podium_cards', JSON.stringify(cards));
+            renderCards();
+            updateMotherApp();
+        }
+
+        function snoozeCard(id) {
+            const card = cards.find(c => c.id === id);
+            card.startTime += 86400000;
+            localStorage.setItem('podium_cards', JSON.stringify(cards));
+            renderCards();
+        }
+
+        // Chronos Logic (Circular Touch)
+        const wheel = document.getElementById('chronos-touch');
+        wheel.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = wheel.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const angle = Math.atan2(e.touches[0].clientY - centerY, e.touches[0].clientX - centerX);
+            let deg = angle * (180 / Math.PI) + 90;
+            if (deg < 0) deg += 360;
+            
+            selectedHour = Math.round(deg / 15) % 24;
+            document.getElementById('wheel-hand').style.transform = `rotate(${deg}deg)`;
+            document.getElementById('display-time').innerText = `${selectedHour.toString().padStart(2, '0')}:00`;
+        });
+
+        // The Handshake
+        function updateMotherApp() {
+            const total = cards.length;
+            const completed = cards.filter(c => c.status === 'completed').length;
+            const progress = total > 0 ? completed / total : 0;
+            
+            document.getElementById('global-progress').innerText = `${Math.round(progress * 100)}%`;
+
+            window.parent.postMessage({ 
+                type: 'UPDATE_PROGRESS', 
+                appId: 'podium-03', 
+                value: progress 
+            }, '*');
+        }
+
+        function startOrbitClock() {
+            setInterval(() => {
+                if(!activeEditingId) renderCards();
+            }, 60000);
+        }
+
+        // Auto-save notes
+        document.getElementById('edit-notes').onkeyup = () => {
+            if(activeEditingId && !activeEditingId.startsWith('new-')) {
+                const card = cards.find(c => c.id === activeEditingId);
+                card.notes = document.getElementById('edit-notes').value;
+                localStorage.setItem('podium_cards', JSON.stringify(cards));
+            }
+        };
+
+        window.onload = init;
+    </script>
+</body>
+</html>
