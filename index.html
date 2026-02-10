@@ -2,231 +2,312 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PODIUM | Radar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PODIUM | Mission Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@300;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap');
 
         :root {
+            --chrome-bg: #05070a;
+            --teal-accent: #00f2ff;
             --glass: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.1);
-            --gold: #FFD700;
-            --blue: #00D1FF;
-            --white: #FFFFFF;
         }
 
         body {
-            background-color: #050505;
+            background-color: var(--chrome-bg);
             color: white;
             font-family: 'Inter', sans-serif;
-            overflow: hidden; /* Prevent body scroll */
+            overflow: hidden;
             height: 100vh;
         }
 
-        .font-podium { font-family: 'Space Grotesk', sans-serif; }
+        .font-vault { font-family: 'Space Grotesk', sans-serif; }
 
-        /* Custom Scrollbar */
-        .radar-grid::-webkit-scrollbar { width: 4px; }
-        .radar-grid::-webkit-scrollbar-track { background: transparent; }
-        .radar-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        /* Split-Pane Constraints */
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            height: 100vh;
+        }
 
-        .glass {
+        .card-bank {
+            overflow-y: overlay;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.5rem;
+            align-content: start;
+        }
+
+        .glass-panel {
             background: var(--glass);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
         }
 
-        .hour-row {
-            height: 100px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+        .slab-card {
+            aspect-ratio: 1 / 1.1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: pointer;
         }
 
-        .orbit-ring {
-            stroke-dasharray: 100;
-            stroke-dashoffset: 100;
-            transition: stroke-dashoffset 1s linear;
+        .slab-card:hover {
+            border-color: var(--teal-accent);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px -10px rgba(0, 242, 255, 0.2);
         }
 
-        .category-glow-gold { box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); }
-        .category-glow-blue { box-shadow: 0 0 15px rgba(0, 209, 255, 0.2); border: 1px solid rgba(0, 209, 255, 0.4); }
-        .category-glow-white { box-shadow: 0 0 15px rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); }
+        .orbit-ring-container {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 0 5px var(--teal-accent));
+        }
 
-        #canvas-shatter {
+        /* Calendar Styling */
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+
+        .calendar-day:hover { background: rgba(255,255,255,0.1); }
+        .calendar-day.active { background: var(--teal-accent); color: black; font-weight: bold; }
+
+        /* Custom Scrollbar */
+        .card-bank::-webkit-scrollbar { width: 4px; }
+        .card-bank::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .shatter-overlay {
+            pointer-events: none;
             position: fixed;
-            top: 0; left: 0; pointer-events: none;
+            inset: 0;
             z-index: 100;
         }
     </style>
 </head>
 <body>
 
-    <canvas id="canvas-shatter"></canvas>
-
-    <header class="fixed top-0 w-full z-40 p-6 flex justify-between items-center bg-gradient-to-b from-[#050505] to-transparent">
-        <h1 class="font-podium text-2xl tracking-[0.2em] font-bold">PODIUM</h1>
-        <button onclick="openScheduler()" class="glass w-12 h-12 rounded-full flex items-center justify-center text-2xl hover:bg-white/10 transition-all active:scale-95">
-            +
-        </button>
-    </header>
-
-    <main class="pt-24 h-screen overflow-hidden flex flex-col">
-        <div class="radar-grid overflow-y-auto flex-1 relative px-4 pb-20">
-            <div id="grid-container" class="relative">
-                </div>
-        </div>
-    </main>
-
-    <div id="scheduler-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-xl" onclick="closeScheduler()"></div>
+    <div class="dashboard-container">
         
-        <div id="phase-month" class="glass rounded-3xl p-8 w-full max-w-md relative animate-in fade-in zoom-in duration-300">
-            <h2 class="font-podium text-center mb-6 text-xl tracking-widest uppercase">Select Orbit Date</h2>
-            <div class="grid grid-cols-7 gap-2 text-center text-xs opacity-50 mb-2">
-                <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
-            </div>
-            <div id="calendar-grid" class="grid grid-cols-7 gap-2">
-                </div>
-        </div>
-
-        <div id="phase-precision" class="glass rounded-3xl p-8 w-full max-w-md relative hidden animate-in slide-in-from-bottom-8 duration-300">
-            <div class="flex flex-col gap-6">
-                <input type="text" id="task-title" placeholder="MISSION TITLE" class="bg-transparent border-b border-white/20 py-2 text-2xl font-podium focus:outline-none focus:border-white transition-all uppercase">
-                
+        <section class="flex flex-col border-r border-white/5">
+            <header class="p-8 pb-4 flex justify-between items-end">
                 <div>
-                    <label class="text-[10px] tracking-widest uppercase opacity-50 block mb-2">Time Alignment</label>
-                    <input type="time" id="task-time" class="bg-white/5 border border-white/10 p-3 rounded-xl w-full text-white">
+                    <h1 class="font-vault text-3xl font-bold tracking-tighter">PODIUM <span class="text-xs opacity-30 tracking-[0.3em] ml-4">VAULT_v1.0</span></h1>
+                    <p id="current-view-label" class="text-[10px] opacity-40 mt-1 uppercase tracking-widest">Displaying: Feb 10, 2026</p>
                 </div>
+            </header>
+            
+            <div id="card-grid" class="card-bank">
+                </div>
+        </section>
 
-                <div>
-                    <label class="text-[10px] tracking-widest uppercase opacity-50 block mb-2">Satellite Category</label>
-                    <div class="grid grid-cols-2 gap-2" id="category-selector">
-                        <button onclick="selectCategory('Cohort', 'gold')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">COHORT</button>
-                        <button onclick="selectCategory('Practice', 'blue')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">PRACTICE</button>
-                        <button onclick="selectCategory('Family', 'white')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">FAMILY</button>
-                        <button onclick="selectCategory('Catalyst', 'gold')" class="glass p-2 rounded-lg text-xs hover:bg-white/10">CATALYST</button>
+        <aside class="flex flex-col p-8 bg-black/20 backdrop-blur-md">
+            
+            <div class="flex-1">
+                <div class="mb-10">
+                    <h2 class="font-vault text-[10px] tracking-[0.4em] uppercase opacity-50 mb-6">Month Gateway</h2>
+                    <div class="glass-panel rounded-3xl p-6">
+                        <div class="grid grid-cols-7 gap-1 text-center text-[9px] opacity-30 mb-4 font-bold">
+                            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                        </div>
+                        <div id="gateway-calendar" class="grid grid-cols-7 gap-1">
+                            </div>
                     </div>
                 </div>
 
-                <button onclick="finalizeSatellite()" class="w-full bg-white text-black py-4 rounded-full font-bold tracking-widest uppercase text-sm hover:invert transition-all">
-                    Initialize Satellite
-                </button>
+                <div class="space-y-4">
+                    <button onclick="triggerSelectionTrain()" class="w-full py-4 rounded-xl border border-dashed border-white/20 text-white/40 text-xs hover:border-teal-400 hover:text-teal-400 transition-all">
+                        + INITIATE SATELLITE
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-white/5">
+                <div class="flex items-center justify-between glass-panel p-4 rounded-2xl">
+                    <span class="text-[10px] tracking-widest opacity-50 uppercase">Sync to Mission Control</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" checked>
+                        <div class="w-9 h-5 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-teal-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-900/40"></div>
+                    </label>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <div id="train-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-md">
+        <div id="train-modal" class="glass-panel w-full max-w-sm rounded-[2rem] p-10 relative overflow-hidden">
+            <div id="train-step-1">
+                <h3 class="font-vault text-xl mb-8 text-center">Confirm Orbit Date: <span id="confirm-date" class="text-teal-400">16</span></h3>
+                <button onclick="goToStep2()" class="w-full bg-white text-black py-4 rounded-full font-bold uppercase text-xs tracking-widest hover:bg-teal-400 transition-all">Next Phase</button>
+            </div>
+
+            <div id="train-step-2" class="hidden space-y-6">
+                <input type="text" id="event-title" placeholder="MISSION_TITLE" class="bg-transparent border-b border-white/20 w-full py-2 text-xl focus:outline-none focus:border-teal-400 uppercase tracking-widest font-vault">
+                
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="text-[10px] opacity-40 block mb-2">TIME_SYNC</label>
+                        <input type="time" id="event-time" class="bg-white/5 p-3 rounded-xl w-full text-white border border-white/10">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] opacity-40 block mb-2">CATEGORY_VECT</label>
+                    <select id="event-cat" class="bg-white/5 p-3 rounded-xl w-full text-white border border-white/10 appearance-none">
+                        <option value="Cohort">COHORT</option>
+                        <option value="Catalyst">CATALYST</option>
+                        <option value="Practice">PRACTICE</option>
+                        <option value="Family">FAMILY</option>
+                    </select>
+                </div>
+
+                <button onclick="injectCard()" class="w-full bg-teal-400 text-black py-4 rounded-full font-bold uppercase text-xs tracking-widest hover:brightness-125">Finalize Injection</button>
             </div>
         </div>
     </div>
 
+    <div id="canvas-overlay" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/80 backdrop-blur-2xl p-10">
+        <div class="w-full max-w-4xl h-full glass-panel rounded-3xl p-12 flex flex-col relative">
+            <button onclick="closeCanvas()" class="absolute top-8 right-8 text-white/20 hover:text-white">CLOSE_X</button>
+            <h2 id="canvas-title" class="font-vault text-4xl mb-8 text-teal-400 uppercase tracking-tighter">Mission Note</h2>
+            <textarea class="flex-1 bg-transparent border-none outline-none text-xl leading-relaxed text-white/70 resize-none font-light" placeholder="Begin free-form logs..."></textarea>
+        </div>
+    </div>
+
     <script>
-        // State
-        let selectedDate = null;
-        let selectedCat = { name: 'Cohort', color: 'gold' };
-        const gridContainer = document.getElementById('grid-container');
+        let selectedDay = 10;
+        const cardGrid = document.getElementById('card-grid');
 
-        // 1. Build Grid
-        function initGrid() {
-            for (let i = 0; i < 24; i++) {
-                const hour = i.toString().padStart(2, '0') + ':00';
-                const row = document.createElement('div');
-                row.className = 'hour-row flex gap-4 items-start relative';
-                row.innerHTML = `
-                    <span class="text-[10px] opacity-30 font-mono w-8 sticky left-0">${hour}</span>
-                    <div class="flex-1 h-full relative border-l border-white/5"></div>
-                `;
-                gridContainer.appendChild(row);
-            }
-        }
-
-        // 2. Scheduler Navigation
-        function openScheduler() {
-            document.getElementById('scheduler-overlay').classList.remove('hidden');
-            renderCalendar();
-        }
-
-        function closeScheduler() {
-            document.getElementById('scheduler-overlay').classList.add('hidden');
-            document.getElementById('phase-month').classList.remove('hidden');
-            document.getElementById('phase-precision').classList.add('hidden');
-        }
-
-        function renderCalendar() {
-            const grid = document.getElementById('calendar-grid');
-            grid.innerHTML = '';
+        // 1. Initialize Calendar
+        function initCalendar() {
+            const cal = document.getElementById('gateway-calendar');
+            cal.innerHTML = '';
             for (let i = 1; i <= 31; i++) {
                 const day = document.createElement('div');
-                day.className = 'aspect-square flex items-center justify-center text-sm rounded-full hover:bg-white/20 cursor-pointer transition-all';
+                day.className = `calendar-day ${i === selectedDay ? 'active' : ''}`;
                 day.innerText = i;
                 day.onclick = () => {
-                    selectedDate = i;
-                    document.getElementById('phase-month').classList.add('hidden');
-                    document.getElementById('phase-precision').classList.remove('hidden');
+                    selectedDay = i;
+                    updateCalendarUI();
+                    filterCards();
                 };
-                grid.appendChild(day);
+                cal.appendChild(day);
             }
         }
 
-        function selectCategory(name, color) {
-            selectedCat = { name, color };
-            // Simple visual feedback
-            const buttons = document.querySelectorAll('#category-selector button');
-            buttons.forEach(b => b.classList.remove('bg-white/20'));
-            event.target.classList.add('bg-white/20');
+        function updateCalendarUI() {
+            document.querySelectorAll('.calendar-day').forEach((el, idx) => {
+                el.classList.toggle('active', (idx + 1) === selectedDay);
+            });
+            document.getElementById('current-view-label').innerText = `Displaying: Feb ${selectedDay}, 2026`;
+            document.getElementById('confirm-date').innerText = selectedDay;
         }
 
-        // 3. Create Satellite Card
-        function finalizeSatellite() {
-            const title = document.getElementById('task-title').value || "Unnamed Satellite";
-            const time = document.getElementById('task-time').value || "12:00";
-            const hour = parseInt(time.split(':')[0]);
-            const minutes = parseInt(time.split(':')[1]);
+        // 2. Selection Train Logic
+        function triggerSelectionTrain() {
+            document.getElementById('train-overlay').classList.remove('hidden');
+            document.getElementById('train-step-1').classList.remove('hidden');
+            document.getElementById('train-step-2').classList.add('hidden');
+        }
+
+        function goToStep2() {
+            document.getElementById('train-step-1').classList.add('hidden');
+            document.getElementById('train-step-2').classList.remove('hidden');
+        }
+
+        function injectCard() {
+            const title = document.getElementById('event-title').value || "NEW_TASK";
+            const time = document.getElementById('event-time').value || "12:00";
+            const cat = document.getElementById('event-cat').value;
+
+            createCard(title, time, cat);
             
-            const topOffset = (hour * 100) + (minutes * (100/60));
+            // Reset and close
+            document.getElementById('train-overlay').classList.add('hidden');
+            document.getElementById('event-title').value = '';
+        }
 
+        function createCard(title, time, cat) {
             const card = document.createElement('div');
-            card.className = `absolute left-12 right-0 mx-4 glass p-4 rounded-2xl flex justify-between items-center category-glow-${selectedCat.color} cursor-pointer group animate-in slide-in-from-right-4 duration-500`;
-            card.style.top = `${topOffset}px`;
-            card.style.height = "80px";
-
+            card.className = "slab-card glass-panel rounded-2xl p-6 flex flex-col justify-between";
+            card.dataset.day = selectedDay;
+            
             card.innerHTML = `
-                <div>
-                    <h4 class="text-xs opacity-50 font-podium uppercase tracking-widest">${selectedCat.name}</h4>
-                    <h3 class="font-bold text-sm tracking-tight">${title}</h3>
+                <div class="flex justify-between items-start">
+                    <span class="text-[9px] tracking-[0.2em] text-teal-400 font-bold uppercase">${cat}</span>
+                    <div class="orbit-ring-container">
+                        <svg viewBox="0 0 36 36" class="w-full h-full rotate-[-90deg]">
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2"/>
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="65" class="text-teal-400"/>
+                        </svg>
+                    </div>
                 </div>
-                <div class="relative w-10 h-10 flex items-center justify-center">
-                    <svg class="absolute inset-0 w-full h-full -rotate-90">
-                        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2" class="opacity-10" />
-                        <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="2" class="orbit-ring text-white" style="stroke-dashoffset: 30" />
-                    </svg>
-                    <span class="text-[8px]">ACTIVE</span>
+                <div>
+                    <h3 class="font-vault text-lg leading-tight mb-2 uppercase">${title}</h3>
+                    <div class="flex items-center gap-2 opacity-30 text-[10px]">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>${time} SYNC</span>
+                    </div>
                 </div>
             `;
 
-            card.onclick = () => shatterEffect(card);
+            card.onclick = () => openCanvas(title);
+            
+            // Swipe to shatter simulation (Double Click for Demo)
+            card.ondblclick = (e) => {
+                e.stopPropagation();
+                shatter(card);
+            };
 
-            gridContainer.appendChild(card);
-            closeScheduler();
+            cardGrid.prepend(card);
         }
 
-        // 4. The Shatter Effect
-        function shatterEffect(element) {
+        // 3. Expansion Logic
+        function openCanvas(title) {
+            document.getElementById('canvas-title').innerText = title;
+            document.getElementById('canvas-overlay').classList.remove('hidden');
+        }
+
+        function closeCanvas() {
+            document.getElementById('canvas-overlay').classList.add('hidden');
+        }
+
+        // 4. Filter & Shatter
+        function filterCards() {
+            document.querySelectorAll('.slab-card').forEach(card => {
+                card.style.display = (parseInt(card.dataset.day) === selectedDay) ? 'flex' : 'none';
+            });
+        }
+
+        function shatter(element) {
             const rect = element.getBoundingClientRect();
             confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { 
-                    x: (rect.left + rect.width / 2) / window.innerWidth,
-                    y: (rect.top + rect.height / 2) / window.innerHeight 
-                },
-                colors: [selectedCat.color === 'gold' ? '#FFD700' : '#00D1FF', '#ffffff']
+                particleCount: 80,
+                spread: 60,
+                colors: ['#00f2ff', '#ffffff', '#1a1a1a'],
+                origin: { x: (rect.left + rect.width/2)/window.innerWidth, y: (rect.top + rect.height/2)/window.innerHeight }
             });
-            
-            element.classList.add('scale-110', 'opacity-0', 'transition-all', 'duration-300');
+            element.style.transform = "scale(0.8) rotate(5deg)";
+            element.style.opacity = "0";
             setTimeout(() => element.remove(), 300);
         }
 
-        // Initialize
-        initGrid();
+        // Init App
+        initCalendar();
+        // Sample Data
+        createCard("CORE_DATABASE_SYNC", "09:00", "Catalyst");
+        createCard("DESIGN_SYSTEM_AUDIT", "14:30", "Cohort");
     </script>
 </body>
 </html>
