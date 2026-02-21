@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PODIUM | Mission Control</title>
+    <title>PODIUM | CHRONOS v4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -11,10 +11,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap');
 
         :root {
-            --chrome-bg: #05070a;
+            --chrome-bg: #020406;
             --teal-accent: #00f2ff;
+            --gold-accent: #ffcc00;
+            --red-accent: #ff4d4d;
             --glass: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --blur-strength: 40px;
         }
 
         body {
@@ -23,291 +26,296 @@
             font-family: 'Inter', sans-serif;
             overflow: hidden;
             height: 100vh;
+            background-image: radial-gradient(circle at 50% -20%, #1a202c 0%, transparent 60%);
         }
 
         .font-vault { font-family: 'Space Grotesk', sans-serif; }
 
-        /* Split-Pane Constraints */
         .dashboard-container {
             display: grid;
-            grid-template-columns: 1fr 380px;
+            grid-template-columns: 1fr 400px;
             height: 100vh;
-        }
-
-        .card-bank {
-            overflow-y: overlay;
-            padding: 2rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 1.5rem;
-            align-content: start;
         }
 
         .glass-panel {
             background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength));
             border: 1px solid var(--glass-border);
         }
 
-        .slab-card {
-            aspect-ratio: 1 / 1.1;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            cursor: pointer;
+        /* 4-Column Grid for Study Tiles */
+        .study-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 2rem;
+            overflow-y: auto;
         }
 
-        .slab-card:hover {
-            border-color: var(--teal-accent);
-            transform: translateY(-4px);
-            box-shadow: 0 10px 30px -10px rgba(0, 242, 255, 0.2);
-        }
-
-        .orbit-ring-container {
-            width: 40px;
-            height: 40px;
-            filter: drop-shadow(0 0 5px var(--teal-accent));
-        }
-
-        /* Calendar Styling */
-        .calendar-day {
+        .study-tile {
             aspect-ratio: 1;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            cursor: pointer;
+            position: relative;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
+            border-radius: 20px;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .study-tile:hover {
+            background: rgba(0, 242, 255, 0.05);
+            border-color: var(--teal-accent);
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+        }
+
+        /* Ghost Dots */
+        .dot { width: 4px; height: 4px; border-radius: 50%; display: inline-block; margin: 0 1px; }
+        .dot-red { background: var(--red-accent); box-shadow: 0 0 5px var(--red-accent); }
+        .dot-gold { background: var(--gold-accent); box-shadow: 0 0 5px var(--gold-accent); }
+        .dot-cyan { background: var(--teal-accent); box-shadow: 0 0 5px var(--teal-accent); }
+
+        .calendar-day {
+            min-height: 50px;
+            padding: 4px;
+            border: 1px solid rgba(255,255,255,0.03);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.7rem;
             cursor: pointer;
-            font-size: 0.75rem;
-            transition: 0.2s;
+            border-radius: 8px;
         }
 
-        .calendar-day:hover { background: rgba(255,255,255,0.1); }
-        .calendar-day.active { background: var(--teal-accent); color: black; font-weight: bold; }
+        .calendar-day.active { border-color: var(--teal-accent); background: rgba(0, 242, 255, 0.05); }
 
-        /* Custom Scrollbar */
-        .card-bank::-webkit-scrollbar { width: 4px; }
-        .card-bank::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-        .shatter-overlay {
-            pointer-events: none;
-            position: fixed;
-            inset: 0;
-            z-index: 100;
+        .shortcut-pill {
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            transition: 0.3s;
         }
+
+        .shortcut-pill:hover {
+            background: white;
+            color: black;
+            transform: translateY(-2px);
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
 <body>
 
     <div class="dashboard-container">
-        
-        <section class="flex flex-col border-r border-white/5">
-            <header class="p-8 pb-4 flex justify-between items-end">
+        <main class="flex flex-col border-r border-white/5 overflow-hidden">
+            <header class="p-8 flex justify-between items-center bg-black/40">
                 <div>
-                    <h1 class="font-vault text-3xl font-bold tracking-tighter">PODIUM <span class="text-xs opacity-30 tracking-[0.3em] ml-4">VAULT_v1.0</span></h1>
-                    <p id="current-view-label" class="text-[10px] opacity-40 mt-1 uppercase tracking-widest">Displaying: Feb 10, 2026</p>
+                    <h1 class="font-vault text-3xl font-bold tracking-tighter">THE LAB <span class="text-xs opacity-30 ml-4 tracking-widest">v4.0</span></h1>
+                    <p class="text-[10px] opacity-40 uppercase tracking-[0.3em] mt-1">Experimental Learning Environment</p>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="toggleScheduler()" class="px-6 py-2 bg-white text-black text-[10px] font-bold rounded-full uppercase tracking-widest hover:bg-teal-400 transition-all">Schedule</button>
                 </div>
             </header>
-            
-            <div id="card-grid" class="card-bank">
-                </div>
-        </section>
 
-        <aside class="flex flex-col p-8 bg-black/20 backdrop-blur-md">
-            
-            <div class="flex-1">
-                <div class="mb-10">
-                    <h2 class="font-vault text-[10px] tracking-[0.4em] uppercase opacity-50 mb-6">Month Gateway</h2>
-                    <div class="glass-panel rounded-3xl p-6">
-                        <div class="grid grid-cols-7 gap-1 text-center text-[9px] opacity-30 mb-4 font-bold">
-                            <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+            <div id="study-grid" class="study-grid">
+                </div>
+        </main>
+
+        <aside class="flex flex-col p-8 bg-black/40 backdrop-blur-xl">
+            <div class="mb-8">
+                <h2 class="font-vault text-[10px] tracking-[0.4em] uppercase opacity-50 mb-6">Mission Chronos</h2>
+                <div class="glass-panel rounded-3xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <span id="month-label" class="text-xs font-bold uppercase tracking-widest">February 2026</span>
+                        <div class="flex gap-2">
+                            <button onclick="changeMonth(-1)" class="opacity-40 hover:opacity-100">&lt;</button>
+                            <button onclick="changeMonth(1)" class="opacity-40 hover:opacity-100">&gt;</button>
                         </div>
-                        <div id="gateway-calendar" class="grid grid-cols-7 gap-1">
-                            </div>
                     </div>
-                </div>
-
-                <div class="space-y-4">
-                    <button onclick="triggerSelectionTrain()" class="w-full py-4 rounded-xl border border-dashed border-white/20 text-white/40 text-xs hover:border-teal-400 hover:text-teal-400 transition-all">
-                        + INITIATE SATELLITE
-                    </button>
+                    <div class="grid grid-cols-7 gap-1 text-center text-[8px] opacity-30 mb-2 font-bold">
+                        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                    </div>
+                    <div id="mini-calendar" class="grid grid-cols-7 gap-1">
+                        </div>
                 </div>
             </div>
 
-            <div class="pt-6 border-t border-white/5">
-                <div class="flex items-center justify-between glass-panel p-4 rounded-2xl">
-                    <span class="text-[10px] tracking-widest opacity-50 uppercase">Sync to Mission Control</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" class="sr-only peer" checked>
-                        <div class="w-9 h-5 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-teal-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-900/40"></div>
-                    </label>
+            <div class="space-y-6">
+                <h2 class="font-vault text-[10px] tracking-[0.4em] uppercase opacity-50">Quick Injection</h2>
+                <div class="flex flex-wrap gap-2">
+                    <button class="shortcut-pill" onclick="openShortcut('Pets')">Pets</button>
+                    <button class="shortcut-pill" onclick="openShortcut('Errands')">Errands</button>
+                    <button class="shortcut-pill" onclick="openShortcut('Appts')">Appts</button>
+                    <button class="shortcut-pill" onclick="openShortcut('Maint')">Personal Maint</button>
+                </div>
+            </div>
+
+            <div class="mt-auto pt-6 border-t border-white/5">
+                <div class="p-4 rounded-2xl bg-teal-400/5 border border-teal-400/20">
+                    <p class="text-[9px] text-teal-400 uppercase tracking-widest mb-1">Active Ritual</p>
+                    <p id="next-ritual" class="text-xs font-medium">Daily Ritual: Deep Work @ 08:00</p>
                 </div>
             </div>
         </aside>
     </div>
 
-    <div id="train-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-md">
-        <div id="train-modal" class="glass-panel w-full max-w-sm rounded-[2rem] p-10 relative overflow-hidden">
-            <div id="train-step-1">
-                <h3 class="font-vault text-xl mb-8 text-center">Confirm Orbit Date: <span id="confirm-date" class="text-teal-400">16</span></h3>
-                <button onclick="goToStep2()" class="w-full bg-white text-black py-4 rounded-full font-bold uppercase text-xs tracking-widest hover:bg-teal-400 transition-all">Next Phase</button>
-            </div>
-
-            <div id="train-step-2" class="hidden space-y-6">
-                <input type="text" id="event-title" placeholder="MISSION_TITLE" class="bg-transparent border-b border-white/20 w-full py-2 text-xl focus:outline-none focus:border-teal-400 uppercase tracking-widest font-vault">
-                
-                <div class="flex gap-4">
-                    <div class="flex-1">
-                        <label class="text-[10px] opacity-40 block mb-2">TIME_SYNC</label>
-                        <input type="time" id="event-time" class="bg-white/5 p-3 rounded-xl w-full text-white border border-white/10">
-                    </div>
+    <div id="detail-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-[40px]">
+        <div class="glass-panel w-full max-w-lg rounded-[2.5rem] p-12 relative overflow-hidden">
+            <button onclick="closeDetail()" class="absolute top-8 right-8 text-white/20 hover:text-white uppercase text-[10px] tracking-widest">Close</button>
+            <h3 id="detail-date" class="text-teal-400 font-vault text-sm tracking-[0.3em] mb-2 uppercase">Feb 21, 2026</h3>
+            <h2 class="text-4xl font-vault font-bold mb-8 tracking-tighter">DAILY_LOG</h2>
+            <div id="detail-list" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
                 </div>
-
-                <div>
-                    <label class="text-[10px] opacity-40 block mb-2">CATEGORY_VECT</label>
-                    <select id="event-cat" class="bg-white/5 p-3 rounded-xl w-full text-white border border-white/10 appearance-none">
-                        <option value="Cohort">COHORT</option>
-                        <option value="Catalyst">CATALYST</option>
-                        <option value="Practice">PRACTICE</option>
-                        <option value="Family">FAMILY</option>
-                    </select>
-                </div>
-
-                <button onclick="injectCard()" class="w-full bg-teal-400 text-black py-4 rounded-full font-bold uppercase text-xs tracking-widest hover:brightness-125">Finalize Injection</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="canvas-overlay" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/80 backdrop-blur-2xl p-10">
-        <div class="w-full max-w-4xl h-full glass-panel rounded-3xl p-12 flex flex-col relative">
-            <button onclick="closeCanvas()" class="absolute top-8 right-8 text-white/20 hover:text-white">CLOSE_X</button>
-            <h2 id="canvas-title" class="font-vault text-4xl mb-8 text-teal-400 uppercase tracking-tighter">Mission Note</h2>
-            <textarea class="flex-1 bg-transparent border-none outline-none text-xl leading-relaxed text-white/70 resize-none font-light" placeholder="Begin free-form logs..."></textarea>
         </div>
     </div>
 
     <script>
-        let selectedDay = 10;
-        const cardGrid = document.getElementById('card-grid');
+        // --- DATABASE: CHRONOS_MASTER ---
+        const CHRONOS_MASTER = {
+            studyLinks: [
+                { id: 1, name: "Neural Networks", url: "#", cat: "AI" },
+                { id: 2, name: "Interaction Design", url: "#", cat: "UX" },
+                { id: 3, name: "Rust Systems", url: "#", cat: "Dev" },
+                { id: 4, name: "Typescript Mastery", url: "#", cat: "Dev" },
+                { id: 5, name: "Linear Algebra", url: "#", cat: "Math" },
+                { id: 6, name: "Three.js Shaders", url: "#", cat: "GFX" },
+                { id: 7, name: "Framer Motion", url: "#", cat: "UX" },
+                { id: 8, name: "Backend Scaling", url: "#", cat: "Arch" },
+                { id: 9, name: "WebGPU Basics", url: "#", cat: "GFX" },
+                { id: 10, name: "Product Strategy", url: "#", cat: "Biz" },
+                { id: 11, name: "State Machines", url: "#", cat: "Arch" },
+                { id: 12, name: "Crypto Ops", url: "#", cat: "Web3" },
+                { id: 13, name: "LLM Orchestration", url: "#", cat: "AI" },
+                { id: 14, name: "Human Factors", url: "#", cat: "UX" }
+            ],
+            fixedEvents: [
+                { day: "Saturday", title: "Strategy Meeting", time: "10:00", cat: "Biz", type: "meeting" },
+                { day: "Monday", title: "Capoeira Class", time: "18:00", cat: "Health", type: "ritual" },
+                { day: "Wednesday", title: "Capoeira Class", time: "18:00", cat: "Health", type: "ritual" },
+                { day: "Daily", title: "Daily Ritual", time: "08:00", cat: "System", type: "ritual" }
+            ],
+            userTasks: [
+                { date: "2026-02-21", title: "Server Maintenance", time: "23:00", type: "bill", subtasks: ["Backup", "Update SSL"] }
+            ]
+        };
 
-        // 1. Initialize Calendar
-        function initCalendar() {
-            const cal = document.getElementById('gateway-calendar');
+        let currentYear = 2026;
+        let currentMonth = 1; // Feb
+
+        // --- RENDER STUDY TILES ---
+        function renderStudyTiles() {
+            const grid = document.getElementById('study-grid');
+            grid.innerHTML = CHRONOS_MASTER.studyLinks.map(link => `
+                <div class="study-tile glass-panel" onclick="window.open('${link.url}', '_blank')">
+                    <span class="text-[8px] text-teal-400 font-bold tracking-[0.2em] mb-2 uppercase">${link.cat}</span>
+                    <h3 class="font-vault text-xs font-bold leading-tight uppercase">${link.name}</h3>
+                    <div class="mt-4 opacity-10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- CALENDAR LOGIC ---
+        function renderCalendar() {
+            const cal = document.getElementById('mini-calendar');
             cal.innerHTML = '';
-            for (let i = 1; i <= 31; i++) {
-                const day = document.createElement('div');
-                day.className = `calendar-day ${i === selectedDay ? 'active' : ''}`;
-                day.innerText = i;
-                day.onclick = () => {
-                    selectedDay = i;
-                    updateCalendarUI();
-                    filterCards();
-                };
-                cal.appendChild(day);
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                const dayOfWeek = new Date(currentYear, currentMonth, i).toLocaleString('en-us', {weekday: 'long'});
+                
+                const dayEl = document.createElement('div');
+                dayEl.className = 'calendar-day';
+                dayEl.innerHTML = `<span>${i}</span><div class="flex mt-1"></div>`;
+                
+                // Ghost Dot Logic
+                const dotsContainer = dayEl.querySelector('.flex');
+                
+                // 1. Red/Gold (Bills/Meetings)
+                if (CHRONOS_MASTER.userTasks.some(t => t.date === dateStr && t.type === 'bill')) {
+                    dotsContainer.innerHTML += `<span class="dot dot-red"></span>`;
+                }
+                if (CHRONOS_MASTER.fixedEvents.some(e => e.day === dayOfWeek && e.type === 'meeting')) {
+                    dotsContainer.innerHTML += `<span class="dot dot-gold"></span>`;
+                }
+                // 2. Cyan (Study) - Active for all weekdays in this demo
+                if (dayOfWeek !== "Sunday") {
+                    dotsContainer.innerHTML += `<span class="dot dot-cyan"></span>`;
+                }
+
+                dayEl.onclick = () => openDetail(i, dateStr, dayOfWeek);
+                cal.appendChild(dayEl);
             }
         }
 
-        function updateCalendarUI() {
-            document.querySelectorAll('.calendar-day').forEach((el, idx) => {
-                el.classList.toggle('active', (idx + 1) === selectedDay);
-            });
-            document.getElementById('current-view-label').innerText = `Displaying: Feb ${selectedDay}, 2026`;
-            document.getElementById('confirm-date').innerText = selectedDay;
-        }
-
-        // 2. Selection Train Logic
-        function triggerSelectionTrain() {
-            document.getElementById('train-overlay').classList.remove('hidden');
-            document.getElementById('train-step-1').classList.remove('hidden');
-            document.getElementById('train-step-2').classList.add('hidden');
-        }
-
-        function goToStep2() {
-            document.getElementById('train-step-1').classList.add('hidden');
-            document.getElementById('train-step-2').classList.remove('hidden');
-        }
-
-        function injectCard() {
-            const title = document.getElementById('event-title').value || "NEW_TASK";
-            const time = document.getElementById('event-time').value || "12:00";
-            const cat = document.getElementById('event-cat').value;
-
-            createCard(title, time, cat);
+        // --- DETAIL CARD LOGIC ---
+        function openDetail(day, dateStr, dayOfWeek) {
+            const overlay = document.getElementById('detail-overlay');
+            const list = document.getElementById('detail-list');
+            document.getElementById('detail-date').innerText = `${dayOfWeek} | FEB ${day}, 2026`;
             
-            // Reset and close
-            document.getElementById('train-overlay').classList.add('hidden');
-            document.getElementById('event-title').value = '';
-        }
-
-        function createCard(title, time, cat) {
-            const card = document.createElement('div');
-            card.className = "slab-card glass-panel rounded-2xl p-6 flex flex-col justify-between";
-            card.dataset.day = selectedDay;
+            let html = '';
             
-            card.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <span class="text-[9px] tracking-[0.2em] text-teal-400 font-bold uppercase">${cat}</span>
-                    <div class="orbit-ring-container">
-                        <svg viewBox="0 0 36 36" class="w-full h-full rotate-[-90deg]">
-                            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2"/>
-                            <circle cx="18" cy="18" r="16" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="100" stroke-dashoffset="65" class="text-teal-400"/>
-                        </svg>
+            // Combine fixed rituals and specific tasks
+            const daily = CHRONOS_MASTER.fixedEvents.filter(e => e.day === dayOfWeek || e.day === 'Daily');
+            const tasks = CHRONOS_MASTER.userTasks.filter(t => t.date === dateStr);
+
+            [...daily, ...tasks].forEach(item => {
+                html += `
+                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-teal-400 transition-colors">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[9px] tracking-widest text-teal-400 font-bold uppercase">${item.cat || 'MISSION'}</span>
+                            <span class="text-[9px] opacity-40">${item.time}</span>
+                        </div>
+                        <h4 class="font-vault font-bold text-lg uppercase">${item.title}</h4>
+                        ${item.subtasks ? `<div class="mt-2 pl-4 border-l border-white/10 space-y-1">${item.subtasks.map(s => `<p class="text-[10px] opacity-40">• ${s}</p>`).join('')}</div>` : ''}
                     </div>
-                </div>
-                <div>
-                    <h3 class="font-vault text-lg leading-tight mb-2 uppercase">${title}</h3>
-                    <div class="flex items-center gap-2 opacity-30 text-[10px]">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>${time} SYNC</span>
-                    </div>
-                </div>
-            `;
-
-            card.onclick = () => openCanvas(title);
-            
-            // Swipe to shatter simulation (Double Click for Demo)
-            card.ondblclick = (e) => {
-                e.stopPropagation();
-                shatter(card);
-            };
-
-            cardGrid.prepend(card);
-        }
-
-        // 3. Expansion Logic
-        function openCanvas(title) {
-            document.getElementById('canvas-title').innerText = title;
-            document.getElementById('canvas-overlay').classList.remove('hidden');
-        }
-
-        function closeCanvas() {
-            document.getElementById('canvas-overlay').classList.add('hidden');
-        }
-
-        // 4. Filter & Shatter
-        function filterCards() {
-            document.querySelectorAll('.slab-card').forEach(card => {
-                card.style.display = (parseInt(card.dataset.day) === selectedDay) ? 'flex' : 'none';
+                `;
             });
+
+            list.innerHTML = html || '<p class="opacity-30 text-xs italic">No critical missions for this window.</p>';
+            overlay.classList.remove('hidden');
         }
 
-        function shatter(element) {
-            const rect = element.getBoundingClientRect();
-            confetti({
-                particleCount: 80,
-                spread: 60,
-                colors: ['#00f2ff', '#ffffff', '#1a1a1a'],
-                origin: { x: (rect.left + rect.width/2)/window.innerWidth, y: (rect.top + rect.height/2)/window.innerHeight }
-            });
-            element.style.transform = "scale(0.8) rotate(5deg)";
-            element.style.opacity = "0";
-            setTimeout(() => element.remove(), 300);
+        function closeDetail() {
+            document.getElementById('detail-overlay').classList.add('hidden');
         }
 
-        // Init App
-        initCalendar();
-        // Sample Data
-        createCard("CORE_DATABASE_SYNC", "09:00", "Catalyst");
-        createCard("DESIGN_SYSTEM_AUDIT", "14:30", "Cohort");
+        function toggleScheduler() {
+            // In single file, we toggle the UI view or trigger the detail card for today
+            const today = new Date().getDate();
+            const dateStr = `2026-02-21`;
+            openDetail(today, dateStr, "Saturday");
+        }
+
+        function openShortcut(type) {
+            alert(`Initializing Injection Sequence for: ${type}\n(Master Database Write Access Pending)`);
+        }
+
+        function changeMonth(dir) {
+            currentMonth += dir;
+            renderCalendar();
+        }
+
+        // Init
+        renderStudyTiles();
+        renderCalendar();
     </script>
 </body>
 </html>
