@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PODIUM | CHRONOS</title>
+    <title>PODIUM | CHRONOS v4.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap');
 
@@ -30,7 +29,7 @@
 
         .app-layout {
             display: grid;
-            grid-template-columns: 320px 1fr;
+            grid-template-columns: 280px 1fr;
             height: 100vh;
         }
 
@@ -41,7 +40,6 @@
             border: 1px solid var(--glass-border);
         }
 
-        /* Calendar Grid */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -53,7 +51,7 @@
 
         .cal-header {
             background: #05070a;
-            padding: 1rem;
+            padding: 0.75rem;
             text-align: center;
             font-size: 10px;
             text-transform: uppercase;
@@ -63,69 +61,75 @@
 
         .cal-cell {
             background: #020406;
-            padding: 1rem;
+            padding: 0.5rem;
             display: flex;
             flex-direction: column;
+            gap: 4px;
             transition: 0.2s;
             cursor: pointer;
             position: relative;
+            min-height: 100px;
         }
 
-        .cal-cell:hover { background: rgba(255,255,255,0.02); }
-        .cal-cell.today { background: rgba(0, 242, 255, 0.03); }
-        .cal-cell.today::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--teal-accent);
+        .cal-cell.drag-over { background: rgba(0, 242, 255, 0.05); }
+
+        /* Task Label Styling */
+        .task-tag {
+            font-size: 9px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            background: rgba(255,255,255,0.05);
+            border-left: 3px solid transparent;
+            cursor: grab;
+            user-select: none;
         }
-
-        .other-month { opacity: 0.15; pointer-events: none; }
-
-        /* Ghost Dots */
-        .dot { width: 5px; height: 5px; border-radius: 50%; }
-        .dot-red { background: var(--red-accent); box-shadow: 0 0 8px var(--red-accent); }
-        .dot-gold { background: var(--gold-accent); box-shadow: 0 0 8px var(--gold-accent); }
-        .dot-cyan { background: var(--teal-accent); box-shadow: 0 0 8px var(--teal-accent); }
+        .task-tag:active { cursor: grabbing; opacity: 0.5; }
+        .tag-study { border-color: var(--teal-accent); color: var(--teal-accent); }
+        .tag-ritual { border-color: var(--gold-accent); color: var(--gold-accent); }
+        .tag-high { border-color: var(--red-accent); color: var(--red-accent); }
 
         .shortcut-pill {
-            padding: 8px 12px;
+            padding: 12px;
             border-radius: 12px;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--glass-border);
-            text-align: left;
+            text-align: center;
             transition: 0.2s;
+            cursor: pointer;
         }
-
         .shortcut-pill:hover { border-color: var(--teal-accent); background: rgba(0, 242, 255, 0.05); }
 
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        input, select {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            width: 100%;
+            outline: none;
+        }
     </style>
 </head>
 <body>
 
     <div class="app-layout">
-        <aside class="flex flex-col border-r border-white/5 bg-black/40 p-6 overflow-y-auto">
+        <aside class="flex flex-col border-r border-white/5 bg-black/40 p-6">
             <div class="mb-10">
-                <h1 class="font-vault text-2xl font-bold tracking-tighter">CHRONOS <span class="text-[10px] opacity-30 ml-2">v4.1</span></h1>
-                <p class="text-[9px] opacity-40 uppercase tracking-[0.3em] mt-1">Master Schedule Controller</p>
+                <h1 class="font-vault text-2xl font-bold tracking-tighter">CHRONOS</h1>
+                <p class="text-[9px] opacity-40 uppercase tracking-[0.3em]">Master Engine v4.3</p>
             </div>
 
-            <div class="space-y-6 mb-10">
-                <h2 class="text-[10px] tracking-[0.3em] uppercase opacity-40 font-bold">Quick Injection</h2>
+            <div class="space-y-4">
+                <h2 class="text-[10px] tracking-[0.3em] uppercase opacity-40 font-bold mb-4">Injection Vault</h2>
                 <div class="grid grid-cols-1 gap-2">
-                    <button class="shortcut-pill" onclick="triggerInjection('Pets')">Pets</button>
-                    <button class="shortcut-pill" onclick="triggerInjection('Errands')">Errands</button>
-                    <button class="shortcut-pill" onclick="triggerInjection('Appts')">Appointments</button>
-                    <button class="shortcut-pill" onclick="triggerInjection('Personal Maint')">Personal Maint</button>
+                    <div class="shortcut-pill" onclick="openInjection('New Task', 'high')">+ Add Event</div>
+                    <div class="shortcut-pill" onclick="openInjection('Pets', 'high')">Pets</div>
+                    <div class="shortcut-pill" onclick="openInjection('Duolingo', 'study')">Duolingo</div>
                 </div>
-            </div>
-
-            <div>
-                <h2 class="text-[10px] tracking-[0.3em] uppercase opacity-40 font-bold mb-4">Study Lab Links</h2>
-                <div id="study-links-list" class="space-y-1">
-                    </div>
             </div>
         </aside>
 
@@ -134,168 +138,145 @@
                 <div class="flex items-center gap-6">
                     <h2 id="calendar-title" class="font-vault text-xl uppercase tracking-widest font-bold">Month</h2>
                     <div class="flex gap-1">
-                        <button onclick="changeMonth(-1)" class="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white">←</button>
-                        <button onclick="changeMonth(1)" class="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white">→</button>
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <div class="flex items-center gap-2 text-[10px] opacity-50 uppercase tracking-widest">
-                        <span class="dot dot-cyan"></span> Study
-                        <span class="dot dot-gold"></span> Rituals
-                        <span class="dot dot-red"></span> High-Prio
+                        <button onclick="changeMonth(-1)" class="p-2 opacity-40 hover:opacity-100">←</button>
+                        <button onclick="changeMonth(1)" class="p-2 opacity-40 hover:opacity-100">→</button>
                     </div>
                 </div>
             </header>
 
             <div id="calendar-container" class="calendar-grid flex-1">
-                <div class="cal-header">Sun</div>
-                <div class="cal-header">Mon</div>
-                <div class="cal-header">Tue</div>
-                <div class="cal-header">Wed</div>
-                <div class="cal-header">Thu</div>
-                <div class="cal-header">Fri</div>
-                <div class="cal-header">Sat</div>
-                </div>
+                <div class="cal-header">Sun</div><div class="cal-header">Mon</div><div class="cal-header">Tue</div>
+                <div class="cal-header">Wed</div><div class="cal-header">Thu</div><div class="cal-header">Fri</div><div class="cal-header">Sat</div>
+            </div>
         </main>
     </div>
 
-    <div id="detail-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-[40px] p-6">
-        <div class="glass-panel w-full max-w-xl rounded-[2rem] p-10 relative">
-            <button onclick="closeDetail()" class="absolute top-8 right-8 text-white/20 hover:text-white uppercase text-[10px] tracking-widest">Close_X</button>
-            <h3 id="modal-date-label" class="text-teal-400 font-vault text-sm tracking-[0.3em] mb-2 uppercase">Date</h3>
-            <div id="modal-task-list" class="space-y-4 mt-8">
-                </div>
+    <div id="inject-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-3xl">
+        <div class="glass-panel w-full max-w-sm rounded-[2.5rem] p-10">
+            <h3 id="modal-heading" class="text-teal-400 font-vault text-sm tracking-[0.3em] mb-6 uppercase">Sync Task</h3>
+            <div class="space-y-4">
+                <input type="text" id="task-name" placeholder="Task Name">
+                <input type="date" id="task-date">
+                <select id="task-type">
+                    <option value="study">Study (Cyan)</option>
+                    <option value="ritual">Ritual (Gold)</option>
+                    <option value="high">Priority (Red)</option>
+                </select>
+                <button onclick="saveTask()" class="w-full bg-teal-400 text-black py-3 rounded-xl font-bold uppercase text-[10px] tracking-widest mt-4">Save Changes</button>
+                <button id="delete-btn" onclick="deleteTask()" class="w-full text-red-400 text-[9px] uppercase tracking-widest font-bold mt-2 hover:underline hidden">Delete Task</button>
+                <button onclick="closeInjection()" class="w-full opacity-30 text-[9px] uppercase tracking-widest mt-2">Cancel</button>
+            </div>
         </div>
     </div>
 
     <script>
         // --- DATABASE ---
-        const MASTER_DATA = {
-            studyLinks: [
-                "Neural Networks", "Interaction Design", "Rust Systems", "Typescript Mastery",
-                "Linear Algebra", "Three.js Shaders", "Framer Motion", "Backend Scaling",
-                "WebGPU Basics", "Product Strategy", "State Machines", "Crypto Ops",
-                "LLM Orchestration", "Human Factors"
-            ],
-            fixedRituals: [
-                { day: 6, title: "Saturday Strategy Meeting", time: "10:00", type: "meeting" },
-                { day: 1, title: "Capoeira Class", time: "18:00", type: "ritual" },
-                { day: 3, title: "Capoeira Class", time: "18:00", type: "ritual" }
-            ]
-        };
+        let tasks = JSON.parse(localStorage.getItem('CHRONOS_TASKS')) || [
+            { id: 1, name: "Capoeira", date: "2026-02-16", type: "ritual" },
+            { id: 2, name: "Duolingo", date: "2026-02-21", type: "study" }
+        ];
 
-        let viewDate = new Date(); // Controls the current month being viewed
+        let viewDate = new Date();
+        let editingTaskId = null;
 
-        // --- CALENDAR ENGINE ---
         function renderCalendar() {
             const container = document.getElementById('calendar-container');
-            const title = document.getElementById('calendar-title');
-            
-            // Clear existing cells (keep headers)
             const headers = Array.from(container.querySelectorAll('.cal-header'));
             container.innerHTML = '';
             headers.forEach(h => container.appendChild(h));
 
             const year = viewDate.getFullYear();
             const month = viewDate.getMonth();
-            
-            title.innerText = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+            document.getElementById('calendar-title').innerText = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const prevMonthDays = new Date(year, month, 0).getDate();
 
-            // 1. Padding from previous month
-            for (let i = firstDayOfMonth - 1; i >= 0; i--) {
-                const cell = createCell(prevMonthDays - i, true);
+            // Prev month padding omitted for focus on current grid logic
+            for (let i = 0; i < firstDay; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cal-cell opacity-10';
                 container.appendChild(cell);
             }
 
-            // 2. Current month days
-            const today = new Date();
             for (let d = 1; d <= daysInMonth; d++) {
-                const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
-                const cell = createCell(d, false, isToday);
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = 'cal-cell';
+                cell.dataset.date = dateStr;
+                cell.innerHTML = `<span class="text-[10px] font-bold opacity-30 mb-1">${d}</span>`;
                 
-                // Inject Dots based on Logic
-                const dayOfWeek = new Date(year, month, d).getDay();
-                const dotsContainer = document.createElement('div');
-                dotsContainer.className = 'flex gap-1 mt-auto';
+                // DRAG & DROP HANDLERS
+                cell.ondragover = (e) => { e.preventDefault(); cell.classList.add('drag-over'); };
+                cell.ondragleave = () => cell.classList.remove('drag-over');
+                cell.ondrop = (e) => handleDrop(e, dateStr);
 
-                // Study Dot (Weekdays)
-                if (dayOfWeek !== 0 && dayOfWeek !== 6) dotsContainer.innerHTML += '<span class="dot dot-cyan"></span>';
-                // Ritual Dot
-                if (MASTER_DATA.fixedRituals.some(r => r.day === dayOfWeek)) dotsContainer.innerHTML += '<span class="dot dot-gold"></span>';
+                const dayTasks = tasks.filter(t => t.date === dateStr);
+                dayTasks.forEach(t => {
+                    const tag = document.createElement('div');
+                    tag.className = `task-tag tag-${t.type}`;
+                    tag.innerText = t.name;
+                    tag.draggable = true;
+                    tag.onclick = (e) => { e.stopPropagation(); openInjection(t.name, t.type, t.date, t.id); };
+                    tag.ondragstart = (e) => e.dataTransfer.setData("taskId", t.id);
+                    cell.appendChild(tag);
+                });
 
-                cell.appendChild(dotsContainer);
-                cell.onclick = () => openDayDetail(d, month, year, dayOfWeek);
+                cell.onclick = () => openInjection('New Task', 'study', dateStr);
                 container.appendChild(cell);
             }
         }
 
-        function createCell(num, isOther, isToday) {
-            const div = document.createElement('div');
-            div.className = `cal-cell ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
-            div.innerHTML = `<span class="text-xs font-bold opacity-60">${num}</span>`;
-            return div;
+        function handleDrop(e, newDate) {
+            e.preventDefault();
+            const id = parseInt(e.dataTransfer.getData("taskId"));
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.date = newDate;
+                saveToStorage();
+                renderCalendar();
+            }
         }
 
-        function changeMonth(dir) {
-            viewDate.setMonth(viewDate.getMonth() + dir);
+        function openInjection(name, type, date, id = null) {
+            editingTaskId = id;
+            document.getElementById('task-name').value = name;
+            document.getElementById('task-type').value = type;
+            document.getElementById('task-date').value = date;
+            document.getElementById('delete-btn').classList.toggle('hidden', !id);
+            document.getElementById('modal-heading').innerText = id ? "Edit Mission" : "Inject Mission";
+            document.getElementById('inject-overlay').classList.remove('hidden');
+        }
+
+        function saveTask() {
+            const name = document.getElementById('task-name').value;
+            const date = document.getElementById('task-date').value;
+            const type = document.getElementById('task-type').value;
+
+            if (editingTaskId) {
+                const task = tasks.find(t => t.id === editingTaskId);
+                Object.assign(task, { name, date, type });
+            } else {
+                tasks.push({ id: Date.now(), name, date, type });
+            }
+            
+            saveToStorage();
+            closeInjection();
             renderCalendar();
         }
 
-        // --- STUDY LINKS SIDEBAR ---
-        function renderStudyLinks() {
-            const list = document.getElementById('study-links-list');
-            list.innerHTML = MASTER_DATA.studyLinks.map(name => `
-                <div class="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-all">
-                    <span class="text-[11px] text-white/50 group-hover:text-teal-400 uppercase tracking-tighter transition-all">${name}</span>
-                    <span class="text-[8px] opacity-0 group-hover:opacity-100 transition-all">↗</span>
-                </div>
-            `).join('');
+        function deleteTask() {
+            tasks = tasks.filter(t => t.id !== editingTaskId);
+            saveToStorage();
+            closeInjection();
+            renderCalendar();
         }
 
-        // --- DETAIL MODAL ---
-        function openDayDetail(day, month, year, dayOfWeek) {
-            const overlay = document.getElementById('detail-overlay');
-            const list = document.getElementById('modal-task-list');
-            const dateObj = new Date(year, month, day);
-            
-            document.getElementById('modal-date-label').innerText = dateObj.toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric' });
-            
-            let tasks = [];
-            // Add fixed rituals
-            const rituals = MASTER_DATA.fixedRituals.filter(r => r.day === dayOfWeek);
-            rituals.forEach(r => tasks.push({ ...r, cat: 'System Ritual' }));
-            
-            // Add Study block
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                tasks.push({ title: "Deep Study Block", time: "09:00 - 12:00", type: "study", cat: "Education" });
-            }
+        function saveToStorage() { localStorage.setItem('CHRONOS_TASKS', JSON.stringify(tasks)); }
+        function closeInjection() { document.getElementById('inject-overlay').classList.add('hidden'); }
+        function changeMonth(dir) { viewDate.setMonth(viewDate.getMonth() + dir); renderCalendar(); }
 
-            list.innerHTML = tasks.map(t => `
-                <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[9px] tracking-widest text-teal-400 font-bold uppercase">${t.cat}</span>
-                        <span class="text-[10px] opacity-40">${t.time}</span>
-                    </div>
-                    <h4 class="font-vault text-xl font-bold uppercase">${t.title}</h4>
-                </div>
-            `).join('') || '<p class="opacity-20 italic">No logs found for this sequence.</p>';
-
-            overlay.classList.remove('hidden');
-        }
-
-        function closeDetail() { document.getElementById('detail-overlay').classList.add('hidden'); }
-
-        function triggerInjection(type) {
-            alert(`Opening Injection UI for: ${type}`);
-        }
-
-        // Init
         renderCalendar();
-        renderStudyLinks();
     </script>
 </body>
 </html>
