@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PODIUM | CHRONOS v4.0</title>
+    <title>PODIUM | CHRONOS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Inter:wght@300;400;600&display=swap');
 
@@ -17,7 +16,6 @@
             --red-accent: #ff4d4d;
             --glass: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.08);
-            --blur-strength: 40px;
         }
 
         body {
@@ -26,92 +24,80 @@
             font-family: 'Inter', sans-serif;
             overflow: hidden;
             height: 100vh;
-            background-image: radial-gradient(circle at 50% -20%, #1a202c 0%, transparent 60%);
         }
 
         .font-vault { font-family: 'Space Grotesk', sans-serif; }
 
-        .dashboard-container {
+        .app-layout {
             display: grid;
-            grid-template-columns: 1fr 400px;
+            grid-template-columns: 320px 1fr;
             height: 100vh;
         }
 
         .glass-panel {
             background: var(--glass);
-            backdrop-filter: blur(var(--blur-strength));
-            -webkit-backdrop-filter: blur(var(--blur-strength));
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
             border: 1px solid var(--glass-border);
         }
 
-        /* 4-Column Grid for Study Tiles */
-        .study-grid {
+        /* Calendar Grid */
+        .calendar-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            padding: 2rem;
-            overflow-y: auto;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: auto repeat(6, 1fr);
+            height: 100%;
+            gap: 1px;
+            background: var(--glass-border);
         }
 
-        .study-tile {
-            aspect-ratio: 1;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        .cal-header {
+            background: #05070a;
+            padding: 1rem;
+            text-align: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: rgba(255,255,255,0.4);
+        }
+
+        .cal-cell {
+            background: #020406;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            transition: 0.2s;
             cursor: pointer;
             position: relative;
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--glass-border);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-radius: 20px;
-            text-align: center;
-            padding: 1rem;
         }
 
-        .study-tile:hover {
-            background: rgba(0, 242, 255, 0.05);
-            border-color: var(--teal-accent);
-            transform: scale(1.02);
-            box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+        .cal-cell:hover { background: rgba(255,255,255,0.02); }
+        .cal-cell.today { background: rgba(0, 242, 255, 0.03); }
+        .cal-cell.today::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--teal-accent);
         }
+
+        .other-month { opacity: 0.15; pointer-events: none; }
 
         /* Ghost Dots */
-        .dot { width: 4px; height: 4px; border-radius: 50%; display: inline-block; margin: 0 1px; }
-        .dot-red { background: var(--red-accent); box-shadow: 0 0 5px var(--red-accent); }
-        .dot-gold { background: var(--gold-accent); box-shadow: 0 0 5px var(--gold-accent); }
-        .dot-cyan { background: var(--teal-accent); box-shadow: 0 0 5px var(--teal-accent); }
-
-        .calendar-day {
-            min-height: 50px;
-            padding: 4px;
-            border: 1px solid rgba(255,255,255,0.03);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 0.7rem;
-            cursor: pointer;
-            border-radius: 8px;
-        }
-
-        .calendar-day.active { border-color: var(--teal-accent); background: rgba(0, 242, 255, 0.05); }
+        .dot { width: 5px; height: 5px; border-radius: 50%; }
+        .dot-red { background: var(--red-accent); box-shadow: 0 0 8px var(--red-accent); }
+        .dot-gold { background: var(--gold-accent); box-shadow: 0 0 8px var(--gold-accent); }
+        .dot-cyan { background: var(--teal-accent); box-shadow: 0 0 8px var(--teal-accent); }
 
         .shortcut-pill {
-            padding: 6px 14px;
-            border-radius: 99px;
+            padding: 8px 12px;
+            border-radius: 12px;
             font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.03);
             border: 1px solid var(--glass-border);
-            transition: 0.3s;
+            text-align: left;
+            transition: 0.2s;
         }
 
-        .shortcut-pill:hover {
-            background: white;
-            color: black;
-            transform: translateY(-2px);
-        }
+        .shortcut-pill:hover { border-color: var(--teal-accent); background: rgba(0, 242, 255, 0.05); }
 
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
@@ -119,203 +105,197 @@
 </head>
 <body>
 
-    <div class="dashboard-container">
-        <main class="flex flex-col border-r border-white/5 overflow-hidden">
-            <header class="p-8 flex justify-between items-center bg-black/40">
-                <div>
-                    <h1 class="font-vault text-3xl font-bold tracking-tighter">THE LAB <span class="text-xs opacity-30 ml-4 tracking-widest">v4.0</span></h1>
-                    <p class="text-[10px] opacity-40 uppercase tracking-[0.3em] mt-1">Experimental Learning Environment</p>
+    <div class="app-layout">
+        <aside class="flex flex-col border-r border-white/5 bg-black/40 p-6 overflow-y-auto">
+            <div class="mb-10">
+                <h1 class="font-vault text-2xl font-bold tracking-tighter">CHRONOS <span class="text-[10px] opacity-30 ml-2">v4.1</span></h1>
+                <p class="text-[9px] opacity-40 uppercase tracking-[0.3em] mt-1">Master Schedule Controller</p>
+            </div>
+
+            <div class="space-y-6 mb-10">
+                <h2 class="text-[10px] tracking-[0.3em] uppercase opacity-40 font-bold">Quick Injection</h2>
+                <div class="grid grid-cols-1 gap-2">
+                    <button class="shortcut-pill" onclick="triggerInjection('Pets')">Pets</button>
+                    <button class="shortcut-pill" onclick="triggerInjection('Errands')">Errands</button>
+                    <button class="shortcut-pill" onclick="triggerInjection('Appts')">Appointments</button>
+                    <button class="shortcut-pill" onclick="triggerInjection('Personal Maint')">Personal Maint</button>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-[10px] tracking-[0.3em] uppercase opacity-40 font-bold mb-4">Study Lab Links</h2>
+                <div id="study-links-list" class="space-y-1">
+                    </div>
+            </div>
+        </aside>
+
+        <main class="flex flex-col">
+            <header class="p-6 flex justify-between items-center border-b border-white/5">
+                <div class="flex items-center gap-6">
+                    <h2 id="calendar-title" class="font-vault text-xl uppercase tracking-widest font-bold">Month</h2>
+                    <div class="flex gap-1">
+                        <button onclick="changeMonth(-1)" class="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white">←</button>
+                        <button onclick="changeMonth(1)" class="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white">→</button>
+                    </div>
                 </div>
                 <div class="flex gap-4">
-                    <button onclick="toggleScheduler()" class="px-6 py-2 bg-white text-black text-[10px] font-bold rounded-full uppercase tracking-widest hover:bg-teal-400 transition-all">Schedule</button>
+                    <div class="flex items-center gap-2 text-[10px] opacity-50 uppercase tracking-widest">
+                        <span class="dot dot-cyan"></span> Study
+                        <span class="dot dot-gold"></span> Rituals
+                        <span class="dot dot-red"></span> High-Prio
+                    </div>
                 </div>
             </header>
 
-            <div id="study-grid" class="study-grid">
+            <div id="calendar-container" class="calendar-grid flex-1">
+                <div class="cal-header">Sun</div>
+                <div class="cal-header">Mon</div>
+                <div class="cal-header">Tue</div>
+                <div class="cal-header">Wed</div>
+                <div class="cal-header">Thu</div>
+                <div class="cal-header">Fri</div>
+                <div class="cal-header">Sat</div>
                 </div>
         </main>
-
-        <aside class="flex flex-col p-8 bg-black/40 backdrop-blur-xl">
-            <div class="mb-8">
-                <h2 class="font-vault text-[10px] tracking-[0.4em] uppercase opacity-50 mb-6">Mission Chronos</h2>
-                <div class="glass-panel rounded-3xl p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <span id="month-label" class="text-xs font-bold uppercase tracking-widest">February 2026</span>
-                        <div class="flex gap-2">
-                            <button onclick="changeMonth(-1)" class="opacity-40 hover:opacity-100">&lt;</button>
-                            <button onclick="changeMonth(1)" class="opacity-40 hover:opacity-100">&gt;</button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-7 gap-1 text-center text-[8px] opacity-30 mb-2 font-bold">
-                        <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
-                    </div>
-                    <div id="mini-calendar" class="grid grid-cols-7 gap-1">
-                        </div>
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                <h2 class="font-vault text-[10px] tracking-[0.4em] uppercase opacity-50">Quick Injection</h2>
-                <div class="flex flex-wrap gap-2">
-                    <button class="shortcut-pill" onclick="openShortcut('Pets')">Pets</button>
-                    <button class="shortcut-pill" onclick="openShortcut('Errands')">Errands</button>
-                    <button class="shortcut-pill" onclick="openShortcut('Appts')">Appts</button>
-                    <button class="shortcut-pill" onclick="openShortcut('Maint')">Personal Maint</button>
-                </div>
-            </div>
-
-            <div class="mt-auto pt-6 border-t border-white/5">
-                <div class="p-4 rounded-2xl bg-teal-400/5 border border-teal-400/20">
-                    <p class="text-[9px] text-teal-400 uppercase tracking-widest mb-1">Active Ritual</p>
-                    <p id="next-ritual" class="text-xs font-medium">Daily Ritual: Deep Work @ 08:00</p>
-                </div>
-            </div>
-        </aside>
     </div>
 
-    <div id="detail-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-[40px]">
-        <div class="glass-panel w-full max-w-lg rounded-[2.5rem] p-12 relative overflow-hidden">
-            <button onclick="closeDetail()" class="absolute top-8 right-8 text-white/20 hover:text-white uppercase text-[10px] tracking-widest">Close</button>
-            <h3 id="detail-date" class="text-teal-400 font-vault text-sm tracking-[0.3em] mb-2 uppercase">Feb 21, 2026</h3>
-            <h2 class="text-4xl font-vault font-bold mb-8 tracking-tighter">DAILY_LOG</h2>
-            <div id="detail-list" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+    <div id="detail-overlay" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-[40px] p-6">
+        <div class="glass-panel w-full max-w-xl rounded-[2rem] p-10 relative">
+            <button onclick="closeDetail()" class="absolute top-8 right-8 text-white/20 hover:text-white uppercase text-[10px] tracking-widest">Close_X</button>
+            <h3 id="modal-date-label" class="text-teal-400 font-vault text-sm tracking-[0.3em] mb-2 uppercase">Date</h3>
+            <div id="modal-task-list" class="space-y-4 mt-8">
                 </div>
         </div>
     </div>
 
     <script>
-        // --- DATABASE: CHRONOS_MASTER ---
-        const CHRONOS_MASTER = {
+        // --- DATABASE ---
+        const MASTER_DATA = {
             studyLinks: [
-                { id: 1, name: "Neural Networks", url: "#", cat: "AI" },
-                { id: 2, name: "Interaction Design", url: "#", cat: "UX" },
-                { id: 3, name: "Rust Systems", url: "#", cat: "Dev" },
-                { id: 4, name: "Typescript Mastery", url: "#", cat: "Dev" },
-                { id: 5, name: "Linear Algebra", url: "#", cat: "Math" },
-                { id: 6, name: "Three.js Shaders", url: "#", cat: "GFX" },
-                { id: 7, name: "Framer Motion", url: "#", cat: "UX" },
-                { id: 8, name: "Backend Scaling", url: "#", cat: "Arch" },
-                { id: 9, name: "WebGPU Basics", url: "#", cat: "GFX" },
-                { id: 10, name: "Product Strategy", url: "#", cat: "Biz" },
-                { id: 11, name: "State Machines", url: "#", cat: "Arch" },
-                { id: 12, name: "Crypto Ops", url: "#", cat: "Web3" },
-                { id: 13, name: "LLM Orchestration", url: "#", cat: "AI" },
-                { id: 14, name: "Human Factors", url: "#", cat: "UX" }
+                "Neural Networks", "Interaction Design", "Rust Systems", "Typescript Mastery",
+                "Linear Algebra", "Three.js Shaders", "Framer Motion", "Backend Scaling",
+                "WebGPU Basics", "Product Strategy", "State Machines", "Crypto Ops",
+                "LLM Orchestration", "Human Factors"
             ],
-            fixedEvents: [
-                { day: "Saturday", title: "Strategy Meeting", time: "10:00", cat: "Biz", type: "meeting" },
-                { day: "Monday", title: "Capoeira Class", time: "18:00", cat: "Health", type: "ritual" },
-                { day: "Wednesday", title: "Capoeira Class", time: "18:00", cat: "Health", type: "ritual" },
-                { day: "Daily", title: "Daily Ritual", time: "08:00", cat: "System", type: "ritual" }
-            ],
-            userTasks: [
-                { date: "2026-02-21", title: "Server Maintenance", time: "23:00", type: "bill", subtasks: ["Backup", "Update SSL"] }
+            fixedRituals: [
+                { day: 6, title: "Saturday Strategy Meeting", time: "10:00", type: "meeting" },
+                { day: 1, title: "Capoeira Class", time: "18:00", type: "ritual" },
+                { day: 3, title: "Capoeira Class", time: "18:00", type: "ritual" }
             ]
         };
 
-        let currentYear = 2026;
-        let currentMonth = 1; // Feb
+        let viewDate = new Date(); // Controls the current month being viewed
 
-        // --- RENDER STUDY TILES ---
-        function renderStudyTiles() {
-            const grid = document.getElementById('study-grid');
-            grid.innerHTML = CHRONOS_MASTER.studyLinks.map(link => `
-                <div class="study-tile glass-panel" onclick="window.open('${link.url}', '_blank')">
-                    <span class="text-[8px] text-teal-400 font-bold tracking-[0.2em] mb-2 uppercase">${link.cat}</span>
-                    <h3 class="font-vault text-xs font-bold leading-tight uppercase">${link.name}</h3>
-                    <div class="mt-4 opacity-10">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
-                    </div>
+        // --- CALENDAR ENGINE ---
+        function renderCalendar() {
+            const container = document.getElementById('calendar-container');
+            const title = document.getElementById('calendar-title');
+            
+            // Clear existing cells (keep headers)
+            const headers = Array.from(container.querySelectorAll('.cal-header'));
+            container.innerHTML = '';
+            headers.forEach(h => container.appendChild(h));
+
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            
+            title.innerText = viewDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            // 1. Padding from previous month
+            for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+                const cell = createCell(prevMonthDays - i, true);
+                container.appendChild(cell);
+            }
+
+            // 2. Current month days
+            const today = new Date();
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isToday = today.getDate() === d && today.getMonth() === month && today.getFullYear() === year;
+                const cell = createCell(d, false, isToday);
+                
+                // Inject Dots based on Logic
+                const dayOfWeek = new Date(year, month, d).getDay();
+                const dotsContainer = document.createElement('div');
+                dotsContainer.className = 'flex gap-1 mt-auto';
+
+                // Study Dot (Weekdays)
+                if (dayOfWeek !== 0 && dayOfWeek !== 6) dotsContainer.innerHTML += '<span class="dot dot-cyan"></span>';
+                // Ritual Dot
+                if (MASTER_DATA.fixedRituals.some(r => r.day === dayOfWeek)) dotsContainer.innerHTML += '<span class="dot dot-gold"></span>';
+
+                cell.appendChild(dotsContainer);
+                cell.onclick = () => openDayDetail(d, month, year, dayOfWeek);
+                container.appendChild(cell);
+            }
+        }
+
+        function createCell(num, isOther, isToday) {
+            const div = document.createElement('div');
+            div.className = `cal-cell ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}`;
+            div.innerHTML = `<span class="text-xs font-bold opacity-60">${num}</span>`;
+            return div;
+        }
+
+        function changeMonth(dir) {
+            viewDate.setMonth(viewDate.getMonth() + dir);
+            renderCalendar();
+        }
+
+        // --- STUDY LINKS SIDEBAR ---
+        function renderStudyLinks() {
+            const list = document.getElementById('study-links-list');
+            list.innerHTML = MASTER_DATA.studyLinks.map(name => `
+                <div class="group flex items-center justify-between p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-all">
+                    <span class="text-[11px] text-white/50 group-hover:text-teal-400 uppercase tracking-tighter transition-all">${name}</span>
+                    <span class="text-[8px] opacity-0 group-hover:opacity-100 transition-all">↗</span>
                 </div>
             `).join('');
         }
 
-        // --- CALENDAR LOGIC ---
-        function renderCalendar() {
-            const cal = document.getElementById('mini-calendar');
-            cal.innerHTML = '';
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            
-            for (let i = 1; i <= daysInMonth; i++) {
-                const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                const dayOfWeek = new Date(currentYear, currentMonth, i).toLocaleString('en-us', {weekday: 'long'});
-                
-                const dayEl = document.createElement('div');
-                dayEl.className = 'calendar-day';
-                dayEl.innerHTML = `<span>${i}</span><div class="flex mt-1"></div>`;
-                
-                // Ghost Dot Logic
-                const dotsContainer = dayEl.querySelector('.flex');
-                
-                // 1. Red/Gold (Bills/Meetings)
-                if (CHRONOS_MASTER.userTasks.some(t => t.date === dateStr && t.type === 'bill')) {
-                    dotsContainer.innerHTML += `<span class="dot dot-red"></span>`;
-                }
-                if (CHRONOS_MASTER.fixedEvents.some(e => e.day === dayOfWeek && e.type === 'meeting')) {
-                    dotsContainer.innerHTML += `<span class="dot dot-gold"></span>`;
-                }
-                // 2. Cyan (Study) - Active for all weekdays in this demo
-                if (dayOfWeek !== "Sunday") {
-                    dotsContainer.innerHTML += `<span class="dot dot-cyan"></span>`;
-                }
-
-                dayEl.onclick = () => openDetail(i, dateStr, dayOfWeek);
-                cal.appendChild(dayEl);
-            }
-        }
-
-        // --- DETAIL CARD LOGIC ---
-        function openDetail(day, dateStr, dayOfWeek) {
+        // --- DETAIL MODAL ---
+        function openDayDetail(day, month, year, dayOfWeek) {
             const overlay = document.getElementById('detail-overlay');
-            const list = document.getElementById('detail-list');
-            document.getElementById('detail-date').innerText = `${dayOfWeek} | FEB ${day}, 2026`;
+            const list = document.getElementById('modal-task-list');
+            const dateObj = new Date(year, month, day);
             
-            let html = '';
+            document.getElementById('modal-date-label').innerText = dateObj.toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric' });
             
-            // Combine fixed rituals and specific tasks
-            const daily = CHRONOS_MASTER.fixedEvents.filter(e => e.day === dayOfWeek || e.day === 'Daily');
-            const tasks = CHRONOS_MASTER.userTasks.filter(t => t.date === dateStr);
+            let tasks = [];
+            // Add fixed rituals
+            const rituals = MASTER_DATA.fixedRituals.filter(r => r.day === dayOfWeek);
+            rituals.forEach(r => tasks.push({ ...r, cat: 'System Ritual' }));
+            
+            // Add Study block
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                tasks.push({ title: "Deep Study Block", time: "09:00 - 12:00", type: "study", cat: "Education" });
+            }
 
-            [...daily, ...tasks].forEach(item => {
-                html += `
-                    <div class="p-4 rounded-2xl bg-white/5 border border-white/10 hover:border-teal-400 transition-colors">
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-[9px] tracking-widest text-teal-400 font-bold uppercase">${item.cat || 'MISSION'}</span>
-                            <span class="text-[9px] opacity-40">${item.time}</span>
-                        </div>
-                        <h4 class="font-vault font-bold text-lg uppercase">${item.title}</h4>
-                        ${item.subtasks ? `<div class="mt-2 pl-4 border-l border-white/10 space-y-1">${item.subtasks.map(s => `<p class="text-[10px] opacity-40">• ${s}</p>`).join('')}</div>` : ''}
+            list.innerHTML = tasks.map(t => `
+                <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] tracking-widest text-teal-400 font-bold uppercase">${t.cat}</span>
+                        <span class="text-[10px] opacity-40">${t.time}</span>
                     </div>
-                `;
-            });
+                    <h4 class="font-vault text-xl font-bold uppercase">${t.title}</h4>
+                </div>
+            `).join('') || '<p class="opacity-20 italic">No logs found for this sequence.</p>';
 
-            list.innerHTML = html || '<p class="opacity-30 text-xs italic">No critical missions for this window.</p>';
             overlay.classList.remove('hidden');
         }
 
-        function closeDetail() {
-            document.getElementById('detail-overlay').classList.add('hidden');
-        }
+        function closeDetail() { document.getElementById('detail-overlay').classList.add('hidden'); }
 
-        function toggleScheduler() {
-            // In single file, we toggle the UI view or trigger the detail card for today
-            const today = new Date().getDate();
-            const dateStr = `2026-02-21`;
-            openDetail(today, dateStr, "Saturday");
-        }
-
-        function openShortcut(type) {
-            alert(`Initializing Injection Sequence for: ${type}\n(Master Database Write Access Pending)`);
-        }
-
-        function changeMonth(dir) {
-            currentMonth += dir;
-            renderCalendar();
+        function triggerInjection(type) {
+            alert(`Opening Injection UI for: ${type}`);
         }
 
         // Init
-        renderStudyTiles();
         renderCalendar();
+        renderStudyLinks();
     </script>
 </body>
 </html>
